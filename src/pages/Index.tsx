@@ -74,32 +74,36 @@ const Index = () => {
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        const widthValue = parseInt(width);
-        const heightValue = parseInt(height);
-        
-        if (!widthValue || !heightValue || widthValue <= 0 || heightValue <= 0) {
-          toast({
-            title: "Invalid dimensions",
-            description: "Please set valid width and height dimensions first.",
-            variant: "destructive"
-          });
-          return;
-        }
-
         setIsLoading(true);
         
         try {
+          // Create image to detect dimensions
+          const img = new Image();
+          const imageLoadPromise = new Promise<{ width: number; height: number }>((resolve, reject) => {
+            img.onload = () => {
+              resolve({ width: img.naturalWidth, height: img.naturalHeight });
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = URL.createObjectURL(file);
+          });
+
+          const { width: detectedWidth, height: detectedHeight } = await imageLoadPromise;
+          
+          // Update dimension inputs with detected values
+          setWidth(detectedWidth.toString());
+          setHeight(detectedHeight.toString());
+          
           const cArrayString = await convertImageToArray(file, {
-            width: widthValue,
-            height: heightValue,
-            threshold: 128 // You can make this configurable later
+            width: detectedWidth,
+            height: detectedHeight,
+            threshold: 128
           });
           
           setArrayData(cArrayString);
           
           toast({
             title: "Image converted!",
-            description: "The image has been converted to a C array. Click 'Parse Arrays' to visualize it.",
+            description: `Image converted to C array with dimensions ${detectedWidth}x${detectedHeight}. Click 'Parse Arrays' to visualize it.`,
           });
         } catch (error) {
           console.error('Error converting image:', error);
