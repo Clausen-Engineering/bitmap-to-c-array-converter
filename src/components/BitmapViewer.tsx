@@ -19,30 +19,20 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
   const [hasDragged, setHasDragged] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
-  // Calculate and set canvas size once when data changes
+  // Calculate and set canvas size to use full container space
   useEffect(() => {
     if (!data || data.length === 0 || !containerRef.current) return;
 
     const container = containerRef.current;
-    const rows = data.length;
-    const cols = data[0].length;
     
     // Get container width (subtract padding)
     const containerWidth = container.clientWidth - 32; // 16px padding on each side
-    const aspectRatio = cols / rows;
     
-    // Calculate base display size - ensure width never exceeds container
-    let baseDisplayWidth = Math.min(containerWidth, cols * 8);
-    let baseDisplayHeight = baseDisplayWidth / aspectRatio;
-    
-    // If height would be too large, constrain by height instead
-    const maxHeight = 600;
-    if (baseDisplayHeight > maxHeight) {
-      baseDisplayHeight = maxHeight;
-      baseDisplayWidth = baseDisplayHeight * aspectRatio;
-    }
+    // Use full container width and a fixed height for the canvas
+    const canvasWidth = Math.max(containerWidth, 800); // Minimum 800px width
+    const canvasHeight = 600; // Fixed height
 
-    setCanvasSize({ width: baseDisplayWidth, height: baseDisplayHeight });
+    setCanvasSize({ width: canvasWidth, height: canvasHeight });
   }, [data]);
 
   // Create base canvas once when data changes
@@ -84,7 +74,7 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     const rows = data.length;
     const cols = data[0].length;
     
-    // Set fixed canvas size
+    // Set canvas size to use full available space
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
 
@@ -94,13 +84,29 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Apply zoom to display size
-    const displayWidth = canvasSize.width * zoom;
-    const displayHeight = canvasSize.height * zoom;
+    // Calculate how to fit the image in the canvas while maintaining aspect ratio
+    const imageAspectRatio = cols / rows;
+    const canvasAspectRatio = canvasSize.width / canvasSize.height;
+    
+    let displayWidth, displayHeight;
+    
+    if (imageAspectRatio > canvasAspectRatio) {
+      // Image is wider than canvas
+      displayWidth = canvasSize.width * zoom;
+      displayHeight = (canvasSize.width / imageAspectRatio) * zoom;
+    } else {
+      // Image is taller than canvas
+      displayHeight = canvasSize.height * zoom;
+      displayWidth = (canvasSize.height * imageAspectRatio) * zoom;
+    }
+    
+    // Center the image in the canvas
+    const offsetX = (canvasSize.width - displayWidth / zoom) / 2;
+    const offsetY = (canvasSize.height - displayHeight / zoom) / 2;
     
     // Apply pan and draw image
     ctx.save();
-    ctx.translate(pan.x, pan.y);
+    ctx.translate(pan.x + offsetX, pan.y + offsetY);
     ctx.drawImage(baseCanvas, 0, 0, cols, rows, 0, 0, displayWidth, displayHeight);
 
     // Draw grid if enabled and pixels are large enough
