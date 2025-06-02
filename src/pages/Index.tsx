@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -17,7 +16,6 @@ const Index = () => {
   const [arrayData, setArrayData] = useState('');
   const [parsedArrays, setParsedArrays] = useState<Array<{ name: string; data: number[][] }>>([]);
   const [selectedArray, setSelectedArray] = useState(0);
-  const [zoom, setZoom] = useState([4]);
   const [showGrid, setShowGrid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [width, setWidth] = useState('264');
@@ -79,7 +77,6 @@ const Index = () => {
         setIsLoading(true);
         
         try {
-          // Create image to detect dimensions
           const img = document.createElement('img');
           const imageLoadPromise = new Promise<{ width: number; height: number }>((resolve, reject) => {
             img.onload = () => {
@@ -91,7 +88,6 @@ const Index = () => {
 
           const { width: detectedWidth, height: detectedHeight } = await imageLoadPromise;
           
-          // Update dimension inputs with detected values
           setWidth(detectedWidth.toString());
           setHeight(detectedHeight.toString());
           
@@ -255,20 +251,6 @@ const Index = () => {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-white">Zoom Level: {zoom[0]}x</Label>
-                <div className="bg-slate-800 p-3 rounded-lg">
-                  <Slider
-                    value={zoom}
-                    onValueChange={setZoom}
-                    max={20}
-                    min={1}
-                    step={1}
-                    className="w-full [&_[role=slider]]:bg-blue-600 [&_[role=slider]]:border-slate-500 [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-slate-600 [&_[role=slider]:focus-visible]:border-blue-500 [&_[role=slider]:focus-visible]:ring-0 [&_[role=slider]:focus-visible]:ring-offset-0"
-                  />
-                </div>
-              </div>
-
               <div className="flex items-center justify-between bg-slate-800 p-3 rounded-lg">
                 <Label htmlFor="grid-toggle" className="text-white">
                   Show Grid Lines
@@ -314,7 +296,6 @@ const Index = () => {
             <CardContent>
               <BitmapViewer
                 data={parsedArrays[selectedArray].data}
-                zoom={zoom[0]}
                 showGrid={showGrid}
                 onEdit={handleEditPixels}
               />

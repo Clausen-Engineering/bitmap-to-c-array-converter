@@ -1,8 +1,7 @@
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Save, X } from 'lucide-react';
@@ -18,17 +17,23 @@ interface PixelEditorProps {
 const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [editableData, setEditableData] = useState<number[][]>([]);
-  const [zoom, setZoom] = useState([8]);
+  const [zoom, setZoom] = useState(8);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
-  // Initialize editable data when dialog opens
+  // Fixed viewport size for editor
+  const VIEWPORT_WIDTH = 800;
+  const VIEWPORT_HEIGHT = 600;
+
   useEffect(() => {
     if (isOpen && data) {
       setEditableData(data.map(row => [...row]));
+      setPan({ x: 0, y: 0 });
     }
   }, [isOpen, data]);
 
-  // Render the canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !editableData || editableData.length === 0) return;
@@ -38,66 +43,114 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
 
     const rows = editableData.length;
     const cols = editableData[0].length;
-    const pixelSize = zoom[0];
     
-    // Set canvas size
-    canvas.width = cols * pixelSize;
-    canvas.height = rows * pixelSize;
+    canvas.width = VIEWPORT_WIDTH;
+    canvas.height = VIEWPORT_HEIGHT;
 
-    // Clear canvas
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(pan.x, pan.y);
 
     // Draw pixels
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const bit = editableData[row][col];
         ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
-        ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+        ctx.fillRect(col * zoom, row * zoom, zoom, zoom);
       }
     }
 
     // Draw grid if enabled
-    if (showGrid && pixelSize > 2) {
+    if (showGrid && zoom > 2) {
       ctx.strokeStyle = '#475569';
       ctx.lineWidth = 1;
       
-      // Vertical lines
       for (let col = 0; col <= cols; col++) {
         ctx.beginPath();
-        ctx.moveTo(col * pixelSize, 0);
-        ctx.lineTo(col * pixelSize, canvas.height);
+        ctx.moveTo(col * zoom, 0);
+        ctx.lineTo(col * zoom, rows * zoom);
         ctx.stroke();
       }
       
-      // Horizontal lines
       for (let row = 0; row <= rows; row++) {
         ctx.beginPath();
-        ctx.moveTo(0, row * pixelSize);
-        ctx.lineTo(canvas.width, row * pixelSize);
+        ctx.moveTo(0, row * zoom);
+        ctx.lineTo(cols * zoom, row * zoom);
         ctx.stroke();
       }
     }
-  }, [editableData, zoom, showGrid]);
+    
+    ctx.restore();
+  }, [editableData, zoom, pan, showGrid]);
 
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleWheel = useCallback((event: React.WheelEvent) => {
+    event.preventDefault();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    const oldZoom = zoom;
+    const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(1, Math.min(30, oldZoom * zoomFactor));
+    
+    const zoomRatio = newZoom / oldZoom;
+    const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
+    const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
+    
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  }, [zoom, pan]);
+
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    if (event.button === 0) {
+      setIsDragging(true);
+      setLastMousePos({ x: event.clientX, y: event.clientY });
+    }
+  }, []);
+
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    const deltaX = event.clientX - lastMousePos.x;
+    const deltaY = event.clientY - lastMousePos.y;
+    
+    setPan(prev => ({
+      x: prev.x + deltaX,
+      y: prev.y + deltaY
+    }));
+    
+    setLastMousePos({ x: event.clientX, y: event.clientY });
+  }, [isDragging, lastMousePos]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDragging) return; // Don't edit pixels while dragging
+    
     const canvas = canvasRef.current;
     if (!canvas || !editableData || editableData.length === 0) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = event.clientX - rect.left - pan.x;
+    const y = event.clientY - rect.top - pan.y;
     
-    const pixelSize = zoom[0];
-    const col = Math.floor(x / pixelSize);
-    const row = Math.floor(y / pixelSize);
+    const col = Math.floor(x / zoom);
+    const row = Math.floor(y / zoom);
     
     if (row >= 0 && row < editableData.length && col >= 0 && col < editableData[0].length) {
       const newData = editableData.map(r => [...r]);
       newData[row][col] = newData[row][col] === 0 ? 1 : 0;
       setEditableData(newData);
     }
-  };
+  }, [editableData, zoom, pan, isDragging]);
 
   const handleSave = () => {
     onSave(editableData);
@@ -115,7 +168,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] bg-slate-900 border-slate-700 text-white">
+      <DialogContent className="max-w-6xl max-h-[95vh] bg-slate-900 border-slate-700 text-white">
         <DialogHeader>
           <DialogTitle className="text-white">
             Edit Bitmap - {arrayName} ({rows}×{cols})
@@ -123,20 +176,9 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Controls */}
           <div className="flex items-center gap-6 p-4 bg-slate-800 rounded-lg">
             <div className="flex items-center gap-2">
-              <Label className="text-white">Zoom: {zoom[0]}x</Label>
-              <div className="w-32">
-                <Slider
-                  value={zoom}
-                  onValueChange={setZoom}
-                  max={20}
-                  min={2}
-                  step={1}
-                  className="[&_[role=slider]]:bg-blue-600"
-                />
-              </div>
+              <Label className="text-white">Zoom: {zoom.toFixed(1)}x</Label>
             </div>
             
             <div className="flex items-center gap-2">
@@ -167,21 +209,26 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
             </div>
           </div>
 
-          {/* Canvas Container */}
           <div className="flex justify-center">
-            <div className="max-h-[60vh] overflow-auto bg-slate-800 p-4 rounded-lg">
+            <div className="bg-slate-800 p-4 rounded-lg">
+              <div className="mb-2 text-sm text-slate-400 text-center">
+                Scroll to zoom, drag to pan, click pixels to flip color
+              </div>
               <canvas
                 ref={canvasRef}
+                width={VIEWPORT_WIDTH}
+                height={VIEWPORT_HEIGHT}
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
                 onClick={handleCanvasClick}
-                className="border border-slate-600 rounded cursor-pointer"
+                className="border border-slate-600 rounded cursor-crosshair"
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
           </div>
-          
-          <p className="text-sm text-slate-400 text-center">
-            Click on any pixel to flip its color (black ↔ white)
-          </p>
         </div>
       </DialogContent>
     </Dialog>
