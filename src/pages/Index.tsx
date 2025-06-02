@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +11,7 @@ import BitmapViewer from '@/components/BitmapViewer';
 import PixelEditor from '@/components/PixelEditor';
 import { parseArrayData } from '@/utils/arrayParser';
 import { convertImageToArray } from '@/utils/imageToArray';
+import { downloadCanvasAsPNG } from '@/utils/imageExport';
 
 const Index = () => {
   const [arrayData, setArrayData] = useState('');
@@ -337,6 +337,50 @@ const Index = () => {
     }
   };
 
+  const handleDownloadPNG = () => {
+    if (parsedArrays.length === 0 || !parsedArrays[selectedArray]) {
+      toast({
+        title: "No Data to Download",
+        description: "Please parse array data first before downloading.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const currentArray = parsedArrays[selectedArray];
+    const { data } = currentArray;
+    
+    // Create a canvas to render the bitmap
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rows = data.length;
+    const cols = data[0].length;
+    
+    // Set canvas size to the actual bitmap dimensions
+    canvas.width = cols;
+    canvas.height = rows;
+
+    // Render the bitmap
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const bit = data[row][col];
+        ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
+        ctx.fillRect(col, row, 1, 1);
+      }
+    }
+
+    // Download the canvas as PNG
+    const filename = `${currentArray.name}_${cols}x${rows}.png`;
+    downloadCanvasAsPNG(canvas, filename);
+    
+    toast({
+      title: "Download Started",
+      description: `Downloading ${filename}...`
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
       <div className="container mx-auto px-4 py-8">
@@ -531,6 +575,7 @@ const Index = () => {
                     Edit Pixels
                   </Button>
                   <Button
+                    onClick={handleDownloadPNG}
                     variant="outline"
                     size="sm"
                     className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
