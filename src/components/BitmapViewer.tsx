@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit } from 'lucide-react';
@@ -112,20 +111,6 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
 
   return (
     <div className="space-y-4">
-      {onEdit && (
-        <div className="flex justify-end">
-          <Button
-            onClick={onEdit}
-            variant="outline"
-            size="sm"
-            className="border-slate-500 bg-slate-700 text-white hover:bg-slate-600"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Edit Pixels
-          </Button>
-        </div>
-      )}
-      
       <div className="flex justify-center">
         <div className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl">
           <div className="mb-2 text-sm text-slate-400 text-center">
