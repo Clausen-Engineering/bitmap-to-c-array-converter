@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { Download, Upload, Zap, Image } from 'lucide-react';
 import BitmapViewer from '@/components/BitmapViewer';
+import PixelEditor from '@/components/PixelEditor';
 import { parseArrayData } from '@/utils/arrayParser';
 import { convertImageToArray } from '@/utils/imageToArray';
 
@@ -21,6 +22,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [width, setWidth] = useState('264');
   const [height, setHeight] = useState('176');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   const handleArrayParse = () => {
     if (!arrayData.trim()) {
@@ -118,6 +120,26 @@ const Index = () => {
       }
     };
     input.click();
+  };
+
+  const handleEditPixels = () => {
+    setIsEditorOpen(true);
+  };
+
+  const handleSaveEditedBitmap = (newData: number[][]) => {
+    if (parsedArrays.length > 0) {
+      const updatedArrays = [...parsedArrays];
+      updatedArrays[selectedArray] = {
+        ...updatedArrays[selectedArray],
+        data: newData
+      };
+      setParsedArrays(updatedArrays);
+      
+      toast({
+        title: "Bitmap Updated!",
+        description: "Your pixel edits have been saved successfully."
+      });
+    }
   };
 
   return (
@@ -294,9 +316,21 @@ const Index = () => {
                 data={parsedArrays[selectedArray].data}
                 zoom={zoom[0]}
                 showGrid={showGrid}
+                onEdit={handleEditPixels}
               />
             </CardContent>
           </Card>
+        )}
+
+        {/* Pixel Editor */}
+        {parsedArrays.length > 0 && parsedArrays[selectedArray] && (
+          <PixelEditor
+            isOpen={isEditorOpen}
+            onClose={() => setIsEditorOpen(false)}
+            data={parsedArrays[selectedArray].data}
+            onSave={handleSaveEditedBitmap}
+            arrayName={parsedArrays[selectedArray].name}
+          />
         )}
       </div>
     </div>

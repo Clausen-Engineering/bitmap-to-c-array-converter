@@ -1,13 +1,15 @@
-
 import { useRef, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
 
 interface BitmapViewerProps {
   data: number[][];
   zoom: number;
   showGrid: boolean;
+  onEdit?: () => void;
 }
 
-const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
+const BitmapViewer = ({ data, zoom, showGrid, onEdit }: BitmapViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [baseCanvas, setBaseCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -87,6 +89,12 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
     }
   }, [baseCanvas, zoom, showGrid, data]);
 
+  const handleDoubleClick = () => {
+    if (onEdit) {
+      onEdit();
+    }
+  };
+
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400 bg-slate-800/30 rounded-lg border-2 border-dashed border-slate-600">
@@ -106,18 +114,37 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
   const shouldScroll = displayHeight > maxHeight - 32;
 
   return (
-    <div className="flex justify-center" ref={containerRef}>
-      <div 
-        className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl overflow-auto max-w-full"
-        style={{ 
-          maxHeight: shouldScroll ? `${maxHeight}px` : 'none'
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="border border-slate-600 rounded shadow-lg"
-          style={{ imageRendering: 'pixelated' }}
-        />
+    <div className="space-y-4">
+      {/* Edit Button */}
+      {onEdit && (
+        <div className="flex justify-end">
+          <Button
+            onClick={onEdit}
+            variant="outline"
+            size="sm"
+            className="border-slate-500 bg-slate-700 text-white hover:bg-slate-600"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Pixels
+          </Button>
+        </div>
+      )}
+      
+      <div className="flex justify-center" ref={containerRef}>
+        <div 
+          className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl overflow-auto max-w-full"
+          style={{ 
+            maxHeight: shouldScroll ? `${maxHeight}px` : 'none'
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            className="border border-slate-600 rounded shadow-lg cursor-pointer"
+            style={{ imageRendering: 'pixelated' }}
+            onDoubleClick={handleDoubleClick}
+            title="Double-click to edit pixels"
+          />
+        </div>
       </div>
     </div>
   );
