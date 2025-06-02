@@ -129,6 +129,22 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     ctx.restore();
   }, [baseCanvas, showGrid, data, zoom, pan, canvasSize]);
 
+  // Prevent page scrolling when wheel events happen on the canvas container
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventScroll = (e: WheelEvent) => {
+      e.preventDefault();
+    };
+
+    container.addEventListener('wheel', preventScroll, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', preventScroll);
+    };
+  }, []);
+
   const handleWheel = useCallback((event: React.WheelEvent) => {
     event.preventDefault();
     event.stopPropagation();
