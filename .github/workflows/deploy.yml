@@ -33,6 +33,15 @@ jobs:
       - name: Build for GitHub Pages
         run: npm run build:github
         
+      - name: Create 404.html for SPA routing
+        run: cp ./dist/index.html ./dist/404.html
+        
+      - name: Add favicon fallback
+        run: |
+          if [ ! -f ./dist/favicon.ico ]; then
+            cp ./dist/placeholder.svg ./dist/favicon.ico || echo "No favicon source found, using placeholder"
+          fi
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
