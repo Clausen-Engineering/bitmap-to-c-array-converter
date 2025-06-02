@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+
+import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit } from 'lucide-react';
 
@@ -10,16 +11,7 @@ interface BitmapViewerProps {
 
 const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [baseCanvas, setBaseCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [zoom, setZoom] = useState(4);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-
-  // Fixed viewport size
-  const VIEWPORT_WIDTH = 600;
-  const VIEWPORT_HEIGHT = 400;
 
   // Create base canvas once when data changes
   useEffect(() => {
@@ -44,12 +36,9 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
     }
 
     setBaseCanvas(canvas);
-    
-    // Reset pan when new data is loaded
-    setPan({ x: 0, y: 0 });
   }, [data]);
 
-  // Update display canvas when zoom, pan, or grid changes
+  // Update display canvas when data or grid changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !baseCanvas || !data || data.length === 0) return;
@@ -60,94 +49,49 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
     const rows = data.length;
     const cols = data[0].length;
     
-    canvas.width = VIEWPORT_WIDTH;
-    canvas.height = VIEWPORT_HEIGHT;
-
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Calculate display size - scale to fit available space while maintaining aspect ratio
+    const maxWidth = 600;
+    const maxHeight = 400;
+    const aspectRatio = cols / rows;
+    
+    let displayWidth = Math.min(maxWidth, cols * 8);
+    let displayHeight = displayWidth / aspectRatio;
+    
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight;
+      displayWidth = displayHeight * aspectRatio;
+    }
+    
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
 
     ctx.imageSmoothingEnabled = false;
     
-    // Calculate the source and destination areas for panning
-    const scaledWidth = cols * zoom;
-    const scaledHeight = rows * zoom;
-    
-    // Apply panning offset
-    ctx.save();
-    ctx.translate(pan.x, pan.y);
-    
-    ctx.drawImage(baseCanvas, 0, 0, cols, rows, 0, 0, scaledWidth, scaledHeight);
+    ctx.drawImage(baseCanvas, 0, 0, cols, rows, 0, 0, displayWidth, displayHeight);
 
-    // Draw grid if enabled
-    if (showGrid && zoom > 2) {
+    // Draw grid if enabled and pixels are large enough
+    const pixelSize = displayWidth / cols;
+    if (showGrid && pixelSize > 4) {
       ctx.strokeStyle = '#475569';
       ctx.lineWidth = 1;
       
       for (let col = 0; col <= cols; col++) {
+        const x = (col / cols) * displayWidth;
         ctx.beginPath();
-        ctx.moveTo(col * zoom, 0);
-        ctx.lineTo(col * zoom, scaledHeight);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, displayHeight);
         ctx.stroke();
       }
       
       for (let row = 0; row <= rows; row++) {
+        const y = (row / rows) * displayHeight;
         ctx.beginPath();
-        ctx.moveTo(0, row * zoom);
-        ctx.lineTo(scaledWidth, row * zoom);
+        ctx.moveTo(0, y);
+        ctx.lineTo(displayWidth, y);
         ctx.stroke();
       }
     }
-    
-    ctx.restore();
-  }, [baseCanvas, zoom, pan, showGrid, data]);
-
-  const handleWheel = useCallback((event: React.WheelEvent) => {
-    event.preventDefault();
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    
-    const oldZoom = zoom;
-    const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.5, Math.min(20, oldZoom * zoomFactor));
-    
-    // Calculate new pan to keep mouse position centered
-    const zoomRatio = newZoom / oldZoom;
-    const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
-    const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
-    
-    setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
-  }, [zoom, pan]);
-
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    if (event.button === 0) { // Left mouse button
-      setIsDragging(true);
-      setLastMousePos({ x: event.clientX, y: event.clientY });
-    }
-  }, []);
-
-  const handleMouseMove = useCallback((event: React.MouseEvent) => {
-    if (!isDragging) return;
-    
-    const deltaX = event.clientX - lastMousePos.x;
-    const deltaY = event.clientY - lastMousePos.y;
-    
-    setPan(prev => ({
-      x: prev.x + deltaX,
-      y: prev.y + deltaY
-    }));
-    
-    setLastMousePos({ x: event.clientX, y: event.clientY });
-  }, [isDragging, lastMousePos]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+  }, [baseCanvas, showGrid, data]);
 
   const handleDoubleClick = () => {
     if (onEdit) {
@@ -182,24 +126,17 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
         </div>
       )}
       
-      <div className="flex justify-center" ref={containerRef}>
+      <div className="flex justify-center">
         <div className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl">
           <div className="mb-2 text-sm text-slate-400 text-center">
-            Zoom: {zoom.toFixed(1)}x | Size: {cols}×{rows} | Scroll to zoom, drag to pan
+            Size: {cols}×{rows} | Double-click to edit
           </div>
           <canvas
             ref={canvasRef}
-            width={VIEWPORT_WIDTH}
-            height={VIEWPORT_HEIGHT}
-            className="border border-slate-600 rounded shadow-lg cursor-grab active:cursor-grabbing"
+            className="border border-slate-600 rounded shadow-lg cursor-pointer"
             style={{ imageRendering: 'pixelated' }}
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
             onDoubleClick={handleDoubleClick}
-            title="Scroll to zoom, drag to pan, double-click to edit"
+            title="Double-click to edit"
           />
         </div>
       </div>

@@ -22,6 +22,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
   const [showGrid, setShowGrid] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
+  const [dragStarted, setDragStarted] = useState(false);
 
   // Fixed viewport size for editor
   const VIEWPORT_WIDTH = 800;
@@ -110,6 +111,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (event.button === 0) {
       setIsDragging(true);
+      setDragStarted(false);
       setLastMousePos({ x: event.clientX, y: event.clientY });
     }
   }, []);
@@ -119,6 +121,11 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
     
     const deltaX = event.clientX - lastMousePos.x;
     const deltaY = event.clientY - lastMousePos.y;
+    
+    // If mouse moved significantly, consider it a drag
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      setDragStarted(true);
+    }
     
     setPan(prev => ({
       x: prev.x + deltaX,
@@ -130,10 +137,12 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setDragStarted(false);
   }, []);
 
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDragging) return; // Don't edit pixels while dragging
+    // Only flip pixels on click, not after dragging
+    if (dragStarted) return;
     
     const canvas = canvasRef.current;
     if (!canvas || !editableData || editableData.length === 0) return;
@@ -150,7 +159,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
       newData[row][col] = newData[row][col] === 0 ? 1 : 0;
       setEditableData(newData);
     }
-  }, [editableData, zoom, pan, isDragging]);
+  }, [editableData, zoom, pan, dragStarted]);
 
   const handleSave = () => {
     onSave(editableData);
