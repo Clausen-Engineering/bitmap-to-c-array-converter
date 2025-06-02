@@ -81,47 +81,78 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Validate all images have the same dimensions
-        const imageDimensions: Array<{ width: number; height: number; file: File }> = [];
-        
-        for (const file of files) {
+        if (files.length === 1) {
+          // Single image - convert immediately
+          const file = files[0];
           const img = document.createElement('img');
-          const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+          const imageLoadPromise = new Promise<{ width: number; height: number }>((resolve, reject) => {
             img.onload = () => {
               resolve({ width: img.naturalWidth, height: img.naturalHeight });
             };
-            img.onerror = () => reject(new Error(`Failed to load image: ${file.name}`));
+            img.onerror = () => reject(new Error('Failed to load image'));
             img.src = URL.createObjectURL(file);
           });
+
+          const { width: detectedWidth, height: detectedHeight } = await imageLoadPromise;
           
-          imageDimensions.push({ ...dimensions, file });
-        }
-        
-        // Check if all images have the same dimensions
-        const firstDimensions = imageDimensions[0];
-        const allSameDimensions = imageDimensions.every(
-          img => img.width === firstDimensions.width && img.height === firstDimensions.height
-        );
-        
-        if (!allSameDimensions) {
-          toast({
-            title: "Dimension Mismatch",
-            description: "All images must have the same dimensions for multidimensional arrays.",
-            variant: "destructive"
+          setWidth(detectedWidth.toString());
+          setHeight(detectedHeight.toString());
+          
+          const cArrayString = await convertImageToArray(file, {
+            width: detectedWidth,
+            height: detectedHeight,
+            threshold: 128
           });
-          setIsLoading(false);
-          return;
+          
+          setArrayData(cArrayString);
+          
+          toast({
+            title: "Image converted!",
+            description: `Image converted to C array with dimensions ${detectedWidth}x${detectedHeight}. Click 'Parse Arrays' to visualize it.`,
+          });
+        } else {
+          // Multiple images - validate dimensions and prepare for conversion
+          const imageDimensions: Array<{ width: number; height: number; file: File }> = [];
+          
+          for (const file of files) {
+            const img = document.createElement('img');
+            const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+              img.onload = () => {
+                resolve({ width: img.naturalWidth, height: img.naturalHeight });
+              };
+              img.onerror = () => reject(new Error(`Failed to load image: ${file.name}`));
+              img.src = URL.createObjectURL(file);
+            });
+            
+            imageDimensions.push({ ...dimensions, file });
+          }
+          
+          // Check if all images have the same dimensions
+          const firstDimensions = imageDimensions[0];
+          const allSameDimensions = imageDimensions.every(
+            img => img.width === firstDimensions.width && img.height === firstDimensions.height
+          );
+          
+          if (!allSameDimensions) {
+            toast({
+              title: "Dimension Mismatch",
+              description: "All images must have the same dimensions for multidimensional arrays.",
+              variant: "destructive"
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+          // Set dimensions from the first image
+          setWidth(firstDimensions.width.toString());
+          setHeight(firstDimensions.height.toString());
+          setSelectedImages(files);
+          
+          toast({
+            title: "Images Selected",
+            description: `Selected ${files.length} image(s) with dimensions ${firstDimensions.width}x${firstDimensions.height}. Click 'Convert Images' to process them.`,
+          });
         }
-        
-        // Set dimensions from the first image
-        setWidth(firstDimensions.width.toString());
-        setHeight(firstDimensions.height.toString());
-        setSelectedImages(files);
-        
-        toast({
-          title: "Images Selected",
-          description: `Selected ${files.length} image(s) with dimensions ${firstDimensions.width}x${firstDimensions.height}. Click 'Convert Images' to process them.`,
-        });
         
       } catch (error) {
         console.error('Error processing images:', error);
@@ -161,13 +192,31 @@ const Index = () => {
         cArrayStrings.push(cArrayString);
       }
       
-      // Combine all arrays into a multidimensional array format
-      const combinedArray = cArrayStrings.join('\n\n');
-      setArrayData(combinedArray);
+      // Create a proper multidimensional array format
+      const arrayName = selectedImages[0].name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, '_');
+      const totalBytes = Math.ceil((parseInt(width) * parseInt(height)) / 8);
+      
+      let multidimensionalArray = `const unsigned char ${arrayName}[${selectedImages.length}][${totalBytes}] = {\n`;
+      
+      for (let i = 0; i < cArrayStrings.length; i++) {
+        // Extract just the data part from each array string
+        const match = cArrayStrings[i].match(/{\s*(.*?)\s*}/s);
+        if (match) {
+          multidimensionalArray += `  {${match[1]}}`;
+          if (i < cArrayStrings.length - 1) {
+            multidimensionalArray += ',';
+          }
+          multidimensionalArray += '\n';
+        }
+      }
+      
+      multidimensionalArray += '};';
+      
+      setArrayData(multidimensionalArray);
       
       toast({
         title: "Images Converted!",
-        description: `Converted ${selectedImages.length} image(s) to C array format. Click 'Parse Arrays' to visualize them.`,
+        description: `Converted ${selectedImages.length} image(s) to multidimensional C array format. Click 'Parse Arrays' to visualize them.`,
       });
       
     } catch (error) {
@@ -330,21 +379,12 @@ const Index = () => {
                 </Button>
                 
                 <Button
-                  onClick={handleLoadPicture}
-                  variant="outline"
-                  className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
-                >
-                  <Image className="w-4 h-4 mr-2" />
-                  Load Picture
-                </Button>
-
-                <Button
                   onClick={handleImageSelection}
                   variant="outline"
                   className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
                 >
                   <Image className="w-4 h-4 mr-2" />
-                  Load Multiple Pictures
+                  Load Picture(s)
                 </Button>
               </div>
 
