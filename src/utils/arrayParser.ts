@@ -4,7 +4,12 @@ export interface ParsedArray {
   data: number[][];
 }
 
-export const parseArrayData = (input: string): ParsedArray[] => {
+export interface CustomDimensions {
+  width: number;
+  height: number;
+}
+
+export const parseArrayData = (input: string, customDimensions?: CustomDimensions): ParsedArray[] => {
   console.log('Parsing array data...');
   
   const results: ParsedArray[] = [];
@@ -38,7 +43,7 @@ export const parseArrayData = (input: string): ParsedArray[] => {
       const hexValues = subMatch[1];
       console.log(`Processing sub-array ${subArrayIndex}:`, hexValues.substring(0, 100) + '...');
       
-      const bitmap = parseHexArrayToBitmap(hexValues);
+      const bitmap = parseHexArrayToBitmap(hexValues, customDimensions);
       
       results.push({
         name: `${arrayName}[${subArrayIndex}]`,
@@ -59,7 +64,7 @@ export const parseArrayData = (input: string): ParsedArray[] => {
     if (singleMatch) {
       console.log('Parsing as single array');
       const hexValues = singleMatch[1];
-      const bitmap = parseHexArrayToBitmap(hexValues);
+      const bitmap = parseHexArrayToBitmap(hexValues, customDimensions);
       
       results.push({
         name: 'Array[0]',
@@ -76,7 +81,7 @@ export const parseArrayData = (input: string): ParsedArray[] => {
   return results;
 };
 
-const parseHexArrayToBitmap = (hexString: string): number[][] => {
+const parseHexArrayToBitmap = (hexString: string, customDimensions?: CustomDimensions): number[][] => {
   // Extract hex values
   const hexValues = hexString
     .split(',')
@@ -94,16 +99,21 @@ const parseHexArrayToBitmap = (hexString: string): number[][] => {
   let currentRow: number[] = [];
   let bitCount = 0;
 
-  // Assuming each hex value represents 8 bits
-  // and we need to determine the width based on total bits
-  const totalBits = hexValues.length * 8;
-  
-  // For the given examples, it's 32x64 (32 bits wide, 64 rows)
-  // So 256 hex values = 2048 bits = 32 * 64
-  const width = 32; // bits per row
-  const expectedRows = totalBits / width;
+  // Use custom dimensions if provided, otherwise calculate automatically
+  let width: number;
+  let expectedRows: number;
 
-  console.log(`Expected dimensions: ${width}x${expectedRows}`);
+  if (customDimensions) {
+    width = customDimensions.width;
+    expectedRows = customDimensions.height;
+    console.log(`Using custom dimensions: ${width}x${expectedRows}`);
+  } else {
+    // Default auto-calculation (assuming each hex value represents 8 bits and 32-bit width)
+    const totalBits = hexValues.length * 8;
+    width = 32; // bits per row
+    expectedRows = totalBits / width;
+    console.log(`Auto-calculated dimensions: ${width}x${expectedRows}`);
+  }
 
   for (const hexVal of hexValues) {
     const num = parseInt(hexVal, 16);
@@ -123,15 +133,42 @@ const parseHexArrayToBitmap = (hexString: string): number[][] => {
       if (bitCount % width === 0) {
         bitmap.push([...currentRow]);
         currentRow = [];
+        
+        // Stop if we've reached the expected number of rows (for custom dimensions)
+        if (customDimensions && bitmap.length >= expectedRows) {
+          break;
+        }
       }
+    }
+    
+    // Break out of hex value loop if we've reached expected rows
+    if (customDimensions && bitmap.length >= expectedRows) {
+      break;
     }
   }
   
-  // Add any remaining bits to the last row
-  if (currentRow.length > 0) {
+  // Add any remaining bits to the last row (only if not using custom dimensions or if we haven't reached expected rows)
+  if (currentRow.length > 0 && (!customDimensions || bitmap.length < expectedRows)) {
+    // Pad the last row to reach the expected width if using custom dimensions
+    if (customDimensions) {
+      while (currentRow.length < width) {
+        currentRow.push(1); // Pad with white pixels
+      }
+    }
     bitmap.push(currentRow);
   }
 
   console.log(`Generated bitmap: ${bitmap.length}x${bitmap[0]?.length || 0}`);
+  
+  // Validate dimensions match custom requirements
+  if (customDimensions) {
+    if (bitmap.length !== expectedRows) {
+      console.warn(`Warning: Generated ${bitmap.length} rows, expected ${expectedRows}`);
+    }
+    if (bitmap[0] && bitmap[0].length !== width) {
+      console.warn(`Warning: Generated ${bitmap[0].length} width, expected ${width}`);
+    }
+  }
+  
   return bitmap;
 };
