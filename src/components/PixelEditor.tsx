@@ -22,7 +22,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
   const [showGrid, setShowGrid] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-  const [dragStarted, setDragStarted] = useState(false);
+  const [hasDragged, setHasDragged] = useState(false);
 
   // Fixed viewport size for editor
   const VIEWPORT_WIDTH = 800;
@@ -111,7 +111,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (event.button === 0) {
       setIsDragging(true);
-      setDragStarted(false);
+      setHasDragged(false);
       setLastMousePos({ x: event.clientX, y: event.clientY });
     }
   }, []);
@@ -122,9 +122,9 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
     const deltaX = event.clientX - lastMousePos.x;
     const deltaY = event.clientY - lastMousePos.y;
     
-    // If mouse moved significantly, consider it a drag
-    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
-      setDragStarted(true);
+    // If mouse moved at all, consider it a drag
+    if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
+      setHasDragged(true);
     }
     
     setPan(prev => ({
@@ -137,12 +137,11 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-    setDragStarted(false);
   }, []);
 
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    // Only flip pixels on click, not after dragging
-    if (dragStarted) return;
+    // Only flip pixels if we haven't dragged
+    if (hasDragged) return;
     
     const canvas = canvasRef.current;
     if (!canvas || !editableData || editableData.length === 0) return;
@@ -159,7 +158,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
       newData[row][col] = newData[row][col] === 0 ? 1 : 0;
       setEditableData(newData);
     }
-  }, [editableData, zoom, pan, dragStarted]);
+  }, [editableData, zoom, pan, hasDragged]);
 
   const handleSave = () => {
     onSave(editableData);
@@ -219,23 +218,25 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
           </div>
 
           <div className="flex justify-center">
-            <div className="bg-slate-800 p-4 rounded-lg">
+            <div className="bg-slate-800 p-4 rounded-lg" style={{ width: '100%' }}>
               <div className="mb-2 text-sm text-slate-400 text-center">
                 Scroll to zoom, drag to pan, click pixels to flip color
               </div>
-              <canvas
-                ref={canvasRef}
-                width={VIEWPORT_WIDTH}
-                height={VIEWPORT_HEIGHT}
-                onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onClick={handleCanvasClick}
-                className="border border-slate-600 rounded cursor-crosshair"
-                style={{ imageRendering: 'pixelated' }}
-              />
+              <div className="flex justify-center">
+                <canvas
+                  ref={canvasRef}
+                  width={VIEWPORT_WIDTH}
+                  height={VIEWPORT_HEIGHT}
+                  onWheel={handleWheel}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onClick={handleCanvasClick}
+                  className="border border-slate-600 rounded cursor-crosshair"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              </div>
             </div>
           </div>
         </div>
