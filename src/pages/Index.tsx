@@ -19,9 +19,8 @@ const Index = () => {
   const [zoom, setZoom] = useState([4]);
   const [showGrid, setShowGrid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [customWidth, setCustomWidth] = useState('');
-  const [customHeight, setCustomHeight] = useState('');
-  const [useCustomDimensions, setUseCustomDimensions] = useState(false);
+  const [width, setWidth] = useState('264');
+  const [height, setHeight] = useState('176');
 
   const handleArrayParse = () => {
     if (!arrayData.trim()) {
@@ -33,29 +32,24 @@ const Index = () => {
       return;
     }
 
-    // Validate custom dimensions if enabled
-    if (useCustomDimensions) {
-      const width = parseInt(customWidth);
-      const height = parseInt(customHeight);
-      
-      if (!width || !height || width <= 0 || height <= 0) {
-        toast({
-          title: "Invalid dimensions",
-          description: "Please enter valid width and height values.",
-          variant: "destructive"
-        });
-        return;
-      }
+    const widthValue = parseInt(width);
+    const heightValue = parseInt(height);
+    
+    if (!widthValue || !heightValue || widthValue <= 0 || heightValue <= 0) {
+      toast({
+        title: "Invalid dimensions",
+        description: "Please enter valid width and height values.",
+        variant: "destructive"
+      });
+      return;
     }
 
     setIsLoading(true);
     try {
-      const dimensions = useCustomDimensions ? {
-        width: parseInt(customWidth),
-        height: parseInt(customHeight)
-      } : undefined;
-
-      const parsed = parseArrayData(arrayData, dimensions);
+      const parsed = parseArrayData(arrayData, {
+        width: widthValue,
+        height: heightValue
+      });
       setParsedArrays(parsed);
       setSelectedArray(0);
       toast({
@@ -197,51 +191,35 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Custom Dimensions Section */}
+              {/* Dimensions Section */}
               <div className="space-y-4 p-4 bg-slate-800/50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="custom-dimensions" className="text-slate-300">
-                    Use Custom Dimensions
-                  </Label>
-                  <Switch
-                    id="custom-dimensions"
-                    checked={useCustomDimensions}
-                    onCheckedChange={setUseCustomDimensions}
-                  />
-                </div>
-                
-                {useCustomDimensions && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-slate-300 text-sm">Width (pixels)</Label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 264"
-                        value={customWidth}
-                        onChange={(e) => setCustomWidth(e.target.value)}
-                        className="bg-slate-800 border-slate-600 text-white"
-                        min="1"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-slate-300 text-sm">Height (pixels)</Label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 176"
-                        value={customHeight}
-                        onChange={(e) => setCustomHeight(e.target.value)}
-                        className="bg-slate-800 border-slate-600 text-white"
-                        min="1"
-                      />
-                    </div>
+                <h3 className="text-white font-medium">Bitmap Dimensions</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300 text-sm">Width (pixels)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 264"
+                      value={width}
+                      onChange={(e) => setWidth(e.target.value)}
+                      className="bg-slate-800 border-slate-600 text-white"
+                      min="1"
+                    />
                   </div>
-                )}
-                
+                  <div className="space-y-2">
+                    <Label className="text-slate-300 text-sm">Height (pixels)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 176"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      className="bg-slate-800 border-slate-600 text-white"
+                      min="1"
+                    />
+                  </div>
+                </div>
                 <p className="text-xs text-slate-500">
-                  {useCustomDimensions 
-                    ? "Manual dimensions will override auto-detection" 
-                    : "Dimensions will be calculated automatically (32-bit width default)"
-                  }
+                  Specify the exact bitmap dimensions for proper rendering
                 </p>
               </div>
 

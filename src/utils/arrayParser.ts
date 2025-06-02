@@ -9,7 +9,7 @@ export interface CustomDimensions {
   height: number;
 }
 
-export const parseArrayData = (input: string, customDimensions?: CustomDimensions): ParsedArray[] => {
+export const parseArrayData = (input: string, dimensions: CustomDimensions): ParsedArray[] => {
   console.log('Parsing array data...');
   
   const results: ParsedArray[] = [];
@@ -43,7 +43,7 @@ export const parseArrayData = (input: string, customDimensions?: CustomDimension
       const hexValues = subMatch[1];
       console.log(`Processing sub-array ${subArrayIndex}:`, hexValues.substring(0, 100) + '...');
       
-      const bitmap = parseHexArrayToBitmap(hexValues, customDimensions);
+      const bitmap = parseHexArrayToBitmap(hexValues, dimensions);
       
       results.push({
         name: `${arrayName}[${subArrayIndex}]`,
@@ -64,7 +64,7 @@ export const parseArrayData = (input: string, customDimensions?: CustomDimension
     if (singleMatch) {
       console.log('Parsing as single array');
       const hexValues = singleMatch[1];
-      const bitmap = parseHexArrayToBitmap(hexValues, customDimensions);
+      const bitmap = parseHexArrayToBitmap(hexValues, dimensions);
       
       results.push({
         name: 'Array[0]',
@@ -81,7 +81,7 @@ export const parseArrayData = (input: string, customDimensions?: CustomDimension
   return results;
 };
 
-const parseHexArrayToBitmap = (hexString: string, customDimensions?: CustomDimensions): number[][] => {
+const parseHexArrayToBitmap = (hexString: string, dimensions: CustomDimensions): number[][] => {
   // Extract hex values
   const hexValues = hexString
     .split(',')
@@ -89,32 +89,19 @@ const parseHexArrayToBitmap = (hexString: string, customDimensions?: CustomDimen
     .filter(val => val.length > 0);
 
   console.log(`Found ${hexValues.length} hex values`);
+  console.log(`Using dimensions: ${dimensions.width}x${dimensions.height}`);
 
   if (hexValues.length === 0) {
     throw new Error('No hex values found');
   }
 
-  // Convert hex to binary and create bitmap
-  const bitmap: number[][] = [];
-  let currentRow: number[] = [];
-  let bitCount = 0;
+  // Initialize bitmap with correct dimensions
+  const bitmap: number[][] = Array(dimensions.height).fill(null).map(() => Array(dimensions.width).fill(1));
+  
+  let bitIndex = 0;
+  const totalBits = dimensions.width * dimensions.height;
 
-  // Use custom dimensions if provided, otherwise calculate automatically
-  let width: number;
-  let expectedRows: number;
-
-  if (customDimensions) {
-    width = customDimensions.width;
-    expectedRows = customDimensions.height;
-    console.log(`Using custom dimensions: ${width}x${expectedRows}`);
-  } else {
-    // Default auto-calculation (assuming each hex value represents 8 bits and 32-bit width)
-    const totalBits = hexValues.length * 8;
-    width = 32; // bits per row
-    expectedRows = totalBits / width;
-    console.log(`Auto-calculated dimensions: ${width}x${expectedRows}`);
-  }
-
+  // Process each hex value
   for (const hexVal of hexValues) {
     const num = parseInt(hexVal, 16);
     
@@ -123,52 +110,32 @@ const parseHexArrayToBitmap = (hexString: string, customDimensions?: CustomDimen
       continue;
     }
     
-    // Convert to bit array (8 bits)
+    // Convert to bit array (8 bits, MSB first)
     for (let bit = 7; bit >= 0; bit--) {
-      const bitValue = (num & (1 << bit)) ? 0 : 1; // If bit is set, show as black (0), otherwise white (1)
-      currentRow.push(bitValue);
-      bitCount++;
+      if (bitIndex >= totalBits) break;
       
-      // When we reach the width, start a new row
-      if (bitCount % width === 0) {
-        bitmap.push([...currentRow]);
-        currentRow = [];
-        
-        // Stop if we've reached the expected number of rows (for custom dimensions)
-        if (customDimensions && bitmap.length >= expectedRows) {
-          break;
-        }
+      // Get bit value (0 or 1)
+      const bitValue = (num & (1 << bit)) ? 1 : 0;
+      
+      // Reverse color: 0 becomes 1 (white), 1 becomes 0 (black)
+      const reversedBit = bitValue === 0 ? 1 : 0;
+      
+      // Calculate position for vertical scan
+      // For vertical scan: we fill columns first, then move to next column
+      const col = Math.floor(bitIndex / dimensions.height);
+      const row = bitIndex % dimensions.height;
+      
+      if (row < dimensions.height && col < dimensions.width) {
+        bitmap[row][col] = reversedBit;
       }
+      
+      bitIndex++;
     }
     
-    // Break out of hex value loop if we've reached expected rows
-    if (customDimensions && bitmap.length >= expectedRows) {
-      break;
-    }
-  }
-  
-  // Add any remaining bits to the last row (only if not using custom dimensions or if we haven't reached expected rows)
-  if (currentRow.length > 0 && (!customDimensions || bitmap.length < expectedRows)) {
-    // Pad the last row to reach the expected width if using custom dimensions
-    if (customDimensions) {
-      while (currentRow.length < width) {
-        currentRow.push(1); // Pad with white pixels
-      }
-    }
-    bitmap.push(currentRow);
+    if (bitIndex >= totalBits) break;
   }
 
   console.log(`Generated bitmap: ${bitmap.length}x${bitmap[0]?.length || 0}`);
-  
-  // Validate dimensions match custom requirements
-  if (customDimensions) {
-    if (bitmap.length !== expectedRows) {
-      console.warn(`Warning: Generated ${bitmap.length} rows, expected ${expectedRows}`);
-    }
-    if (bitmap[0] && bitmap[0].length !== width) {
-      console.warn(`Warning: Generated ${bitmap[0].length} width, expected ${width}`);
-    }
-  }
   
   return bitmap;
 };
