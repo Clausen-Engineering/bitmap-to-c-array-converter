@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit } from 'lucide-react';
@@ -10,6 +11,7 @@ interface BitmapViewerProps {
 
 const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [baseCanvas, setBaseCanvas] = useState<HTMLCanvasElement | null>(null);
 
   // Create base canvas once when data changes
@@ -40,7 +42,8 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
   // Update display canvas when data or grid changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !baseCanvas || !data || data.length === 0) return;
+    const container = containerRef.current;
+    if (!canvas || !container || !baseCanvas || !data || data.length === 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -48,14 +51,16 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
     const rows = data.length;
     const cols = data[0].length;
     
-    // Calculate display size - scale to fit available space while maintaining aspect ratio
-    const maxWidth = 1280;
-    const maxHeight = 1100;
+    // Get container width (subtract padding)
+    const containerWidth = container.clientWidth - 32; // 16px padding on each side
     const aspectRatio = cols / rows;
     
-    let displayWidth = Math.min(maxWidth, cols * 8);
+    // Calculate display size - ensure width never exceeds container
+    let displayWidth = Math.min(containerWidth, cols * 8);
     let displayHeight = displayWidth / aspectRatio;
     
+    // If height would be too large, constrain by height instead
+    const maxHeight = 800;
     if (displayHeight > maxHeight) {
       displayHeight = maxHeight;
       displayWidth = displayHeight * aspectRatio;
@@ -112,17 +117,19 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-center">
-        <div className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl">
+        <div ref={containerRef} className="w-full bg-slate-800 p-4 rounded-lg shadow-2xl">
           <div className="mb-2 text-sm text-slate-400 text-center">
             Size: {cols}×{rows} | Double-click to edit
           </div>
-          <canvas
-            ref={canvasRef}
-            className="border border-slate-600 rounded shadow-lg cursor-pointer"
-            style={{ imageRendering: 'pixelated' }}
-            onDoubleClick={handleDoubleClick}
-            title="Double-click to edit"
-          />
+          <div className="flex justify-center">
+            <canvas
+              ref={canvasRef}
+              className="border border-slate-600 rounded shadow-lg cursor-pointer"
+              style={{ imageRendering: 'pixelated' }}
+              onDoubleClick={handleDoubleClick}
+              title="Double-click to edit"
+            />
+          </div>
         </div>
       </div>
     </div>
