@@ -17,6 +17,33 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   const [hasDragged, setHasDragged] = useState(false);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+  // Calculate and set canvas size once when data changes
+  useEffect(() => {
+    if (!data || data.length === 0 || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const rows = data.length;
+    const cols = data[0].length;
+    
+    // Get container width (subtract padding)
+    const containerWidth = container.clientWidth - 32; // 16px padding on each side
+    const aspectRatio = cols / rows;
+    
+    // Calculate base display size - ensure width never exceeds container
+    let baseDisplayWidth = Math.min(containerWidth, cols * 8);
+    let baseDisplayHeight = baseDisplayWidth / aspectRatio;
+    
+    // If height would be too large, constrain by height instead
+    const maxHeight = 600;
+    if (baseDisplayHeight > maxHeight) {
+      baseDisplayHeight = maxHeight;
+      baseDisplayWidth = baseDisplayHeight * aspectRatio;
+    }
+
+    setCanvasSize({ width: baseDisplayWidth, height: baseDisplayHeight });
+  }, [data]);
 
   // Create base canvas once when data changes
   useEffect(() => {
@@ -49,8 +76,7 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
   // Update display canvas when data, grid, zoom, or pan changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || !baseCanvas || !data || data.length === 0) return;
+    if (!canvas || !baseCanvas || !data || data.length === 0 || !canvasSize.width || !canvasSize.height) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -58,33 +84,19 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     const rows = data.length;
     const cols = data[0].length;
     
-    // Get container width (subtract padding)
-    const containerWidth = container.clientWidth - 32; // 16px padding on each side
-    const aspectRatio = cols / rows;
-    
-    // Calculate base display size - ensure width never exceeds container
-    let baseDisplayWidth = Math.min(containerWidth, cols * 8);
-    let baseDisplayHeight = baseDisplayWidth / aspectRatio;
-    
-    // If height would be too large, constrain by height instead
-    const maxHeight = 600;
-    if (baseDisplayHeight > maxHeight) {
-      baseDisplayHeight = maxHeight;
-      baseDisplayWidth = baseDisplayHeight * aspectRatio;
-    }
-
-    // Apply zoom
-    const displayWidth = baseDisplayWidth * zoom;
-    const displayHeight = baseDisplayHeight * zoom;
-    
-    canvas.width = Math.min(containerWidth, displayWidth);
-    canvas.height = Math.min(maxHeight, displayHeight);
+    // Set fixed canvas size
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
 
     ctx.imageSmoothingEnabled = false;
     
     // Clear canvas
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Apply zoom to display size
+    const displayWidth = canvasSize.width * zoom;
+    const displayHeight = canvasSize.height * zoom;
     
     // Apply pan and draw image
     ctx.save();
@@ -115,10 +127,11 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     }
     
     ctx.restore();
-  }, [baseCanvas, showGrid, data, zoom, pan]);
+  }, [baseCanvas, showGrid, data, zoom, pan, canvasSize]);
 
   const handleWheel = useCallback((event: React.WheelEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -199,7 +212,11 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
             <canvas
               ref={canvasRef}
               className="border border-slate-600 rounded shadow-lg cursor-grab active:cursor-grabbing"
-              style={{ imageRendering: 'pixelated' }}
+              style={{ 
+                imageRendering: 'pixelated',
+                width: `${canvasSize.width}px`,
+                height: `${canvasSize.height}px`
+              }}
               onWheel={handleWheel}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
