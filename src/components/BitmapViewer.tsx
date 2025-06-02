@@ -1,5 +1,5 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 interface BitmapViewerProps {
   data: number[][];
@@ -9,10 +9,40 @@ interface BitmapViewerProps {
 
 const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [baseCanvas, setBaseCanvas] = useState<HTMLCanvasElement | null>(null);
 
+  // Create base canvas once when data changes
+  useEffect(() => {
+    if (!data || data.length === 0) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rows = data.length;
+    const cols = data[0].length;
+    
+    // Set base canvas size to actual bitmap dimensions
+    canvas.width = cols;
+    canvas.height = rows;
+
+    // Draw pixels at 1:1 scale
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const bit = data[row][col];
+        ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
+        ctx.fillRect(col, row, 1, 1);
+      }
+    }
+
+    setBaseCanvas(canvas);
+  }, [data]);
+
+  // Update display canvas when zoom or grid changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !data || data.length === 0) return;
+    if (!canvas || !baseCanvas || !data || data.length === 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -20,7 +50,7 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
     const rows = data.length;
     const cols = data[0].length;
     
-    // Set canvas size
+    // Set display canvas size
     canvas.width = cols * zoom;
     canvas.height = rows * zoom;
 
@@ -28,22 +58,11 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
     ctx.fillStyle = '#1e293b'; // slate-800
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw pixels
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const bit = data[row][col];
-        
-        // Set color based on bit value (0 = black, 1 = white)
-        ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
-        
-        ctx.fillRect(
-          col * zoom,
-          row * zoom,
-          zoom,
-          zoom
-        );
-      }
-    }
+    // Disable image smoothing for crisp pixels
+    ctx.imageSmoothingEnabled = false;
+    
+    // Scale and draw the base canvas
+    ctx.drawImage(baseCanvas, 0, 0, cols, rows, 0, 0, cols * zoom, rows * zoom);
 
     // Draw grid if enabled
     if (showGrid && zoom > 2) {
@@ -66,7 +85,7 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
         ctx.stroke();
       }
     }
-  }, [data, zoom, showGrid]);
+  }, [baseCanvas, zoom, showGrid, data]);
 
   if (!data || data.length === 0) {
     return (
@@ -77,8 +96,8 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
   }
 
   return (
-    <div className="flex justify-center">
-      <div className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl">
+    <div className="flex justify-center" ref={containerRef}>
+      <div className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl overflow-auto max-h-[600px] max-w-full">
         <canvas
           ref={canvasRef}
           className="border border-slate-600 rounded shadow-lg"
