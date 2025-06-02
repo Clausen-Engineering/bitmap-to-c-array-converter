@@ -6,7 +6,7 @@
   "homepage": "https://clausen-engineering.github.io/bitmap-to-c-array",
     "scripts": {
     "build": "vite build",
-    "build:github": "vite build"
+    "build:github": "vite build",
     "serve": "serve -s dist -p 3000",
     "serve:local": "npm run build && npm run serve"
   },
