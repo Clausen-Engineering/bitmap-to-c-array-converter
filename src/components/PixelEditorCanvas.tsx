@@ -42,6 +42,9 @@ const PixelEditorCanvas = ({
     canvas.width = width;
     canvas.height = height;
 
+    // Disable image smoothing for pixel-perfect rendering
+    ctx.imageSmoothingEnabled = false;
+
     // Clear with background color
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -49,43 +52,48 @@ const PixelEditorCanvas = ({
     ctx.save();
     ctx.translate(pan.x, pan.y);
 
-    // Use integer pixel positioning to avoid anti-aliasing artifacts
-    const pixelSize = Math.floor(zoom);
+    // Calculate pixel size - use exact zoom value for smoother scaling
+    const pixelSize = zoom;
     
-    // Draw pixels using integer coordinates
+    // Draw pixels first (background layer)
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const bit = data[row][col];
         ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
         
-        const x = Math.floor(col * pixelSize);
-        const y = Math.floor(row * pixelSize);
+        const x = col * pixelSize;
+        const y = row * pixelSize;
         
-        ctx.fillRect(x, y, pixelSize, pixelSize);
+        // Fill with slight overlap to prevent gaps
+        ctx.fillRect(x, y, pixelSize + 0.1, pixelSize + 0.1);
       }
     }
 
-    // Draw grid if enabled and pixels are large enough
-    if (showGrid && pixelSize > 2) {
-      ctx.strokeStyle = '#475569';
+    // Draw grid on top if enabled and pixels are large enough
+    if (showGrid && pixelSize >= 4) {
+      ctx.strokeStyle = '#64748b';
       ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
       
-      // Use integer coordinates for grid lines to avoid blurriness
+      // Vertical lines
       for (let col = 0; col <= cols; col++) {
-        const x = Math.floor(col * pixelSize) + 0.5; // Add 0.5 for crisp lines
+        const x = Math.round(col * pixelSize) + 0.5;
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, Math.floor(rows * pixelSize));
+        ctx.lineTo(x, rows * pixelSize);
         ctx.stroke();
       }
       
+      // Horizontal lines
       for (let row = 0; row <= rows; row++) {
-        const y = Math.floor(row * pixelSize) + 0.5; // Add 0.5 for crisp lines
+        const y = Math.round(row * pixelSize) + 0.5;
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(Math.floor(cols * pixelSize), y);
+        ctx.lineTo(cols * pixelSize, y);
         ctx.stroke();
       }
+      
+      ctx.globalAlpha = 1;
     }
     
     ctx.restore();
@@ -102,14 +110,16 @@ const PixelEditorCanvas = ({
     const mouseY = event.clientY - rect.top;
     
     const oldZoom = zoom;
-    const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(1, Math.min(30, oldZoom * zoomFactor));
+    const zoomFactor = event.deltaY > 0 ? 0.95 : 1.05;
+    const newZoom = Math.max(1, Math.min(50, oldZoom * zoomFactor));
     
-    const zoomRatio = newZoom / oldZoom;
-    const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
-    const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
-    
-    onZoomChange(newZoom, { x: newPanX, y: newPanY });
+    if (newZoom !== oldZoom) {
+      const zoomRatio = newZoom / oldZoom;
+      const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
+      const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
+      
+      onZoomChange(newZoom, { x: newPanX, y: newPanY });
+    }
   }, [zoom, pan, onZoomChange]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
@@ -126,7 +136,7 @@ const PixelEditorCanvas = ({
     const deltaX = event.clientX - lastMousePosRef.current.x;
     const deltaY = event.clientY - lastMousePosRef.current.y;
     
-    if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
+    if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
       hasDraggedRef.current = true;
     }
     
