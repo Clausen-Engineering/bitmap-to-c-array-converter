@@ -82,7 +82,9 @@ const Index = () => {
       
       try {
         if (files.length === 1) {
-          // Single image - convert immediately
+          // Single image - convert immediately and clear selected images
+          setSelectedImages([]); // Clear any previously selected multiple images
+          
           const file = files[0];
           const img = document.createElement('img');
           const imageLoadPromise = new Promise<{ width: number; height: number }>((resolve, reject) => {
