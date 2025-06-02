@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState, useCallback } from 'react';
 
 interface BitmapViewerProps {
@@ -63,6 +62,36 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     setPan({ x: 0, y: 0 });
   }, [data]);
 
+  // Calculate image display properties
+  const getImageDisplayProps = useCallback(() => {
+    if (!data || data.length === 0 || !canvasSize.width || !canvasSize.height) {
+      return { displayWidth: 0, displayHeight: 0, offsetX: 0, offsetY: 0 };
+    }
+
+    const rows = data.length;
+    const cols = data[0].length;
+    const imageAspectRatio = cols / rows;
+    const canvasAspectRatio = canvasSize.width / canvasSize.height;
+    
+    let displayWidth, displayHeight;
+    
+    if (imageAspectRatio > canvasAspectRatio) {
+      // Image is wider than canvas
+      displayWidth = canvasSize.width * zoom;
+      displayHeight = (canvasSize.width / imageAspectRatio) * zoom;
+    } else {
+      // Image is taller than canvas
+      displayHeight = canvasSize.height * zoom;
+      displayWidth = (canvasSize.height * imageAspectRatio) * zoom;
+    }
+    
+    // Center the image in the canvas
+    const offsetX = (canvasSize.width - displayWidth / zoom) / 2;
+    const offsetY = (canvasSize.height - displayHeight / zoom) / 2;
+
+    return { displayWidth, displayHeight, offsetX, offsetY };
+  }, [data, canvasSize, zoom]);
+
   // Update display canvas when data, grid, zoom, or pan changes
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -84,25 +113,7 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Calculate how to fit the image in the canvas while maintaining aspect ratio
-    const imageAspectRatio = cols / rows;
-    const canvasAspectRatio = canvasSize.width / canvasSize.height;
-    
-    let displayWidth, displayHeight;
-    
-    if (imageAspectRatio > canvasAspectRatio) {
-      // Image is wider than canvas
-      displayWidth = canvasSize.width * zoom;
-      displayHeight = (canvasSize.width / imageAspectRatio) * zoom;
-    } else {
-      // Image is taller than canvas
-      displayHeight = canvasSize.height * zoom;
-      displayWidth = (canvasSize.height * imageAspectRatio) * zoom;
-    }
-    
-    // Center the image in the canvas
-    const offsetX = (canvasSize.width - displayWidth / zoom) / 2;
-    const offsetY = (canvasSize.height - displayHeight / zoom) / 2;
+    const { displayWidth, displayHeight, offsetX, offsetY } = getImageDisplayProps();
     
     // Apply pan and draw image
     ctx.save();
@@ -133,7 +144,7 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     }
     
     ctx.restore();
-  }, [baseCanvas, showGrid, data, zoom, pan, canvasSize]);
+  }, [baseCanvas, showGrid, data, zoom, pan, canvasSize, getImageDisplayProps]);
 
   // Prevent page scrolling when wheel events happen on the canvas container
   useEffect(() => {
@@ -162,17 +173,23 @@ const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerPro
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
     
+    const { offsetX, offsetY } = getImageDisplayProps();
+    
+    // Adjust mouse position to account for image offset
+    const adjustedMouseX = mouseX - offsetX;
+    const adjustedMouseY = mouseY - offsetY;
+    
     const oldZoom = zoom;
     const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
     const newZoom = Math.max(0.1, Math.min(10, oldZoom * zoomFactor));
     
     const zoomRatio = newZoom / oldZoom;
-    const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
-    const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
+    const newPanX = adjustedMouseX - (adjustedMouseX - pan.x) * zoomRatio;
+    const newPanY = adjustedMouseY - (adjustedMouseY - pan.y) * zoomRatio;
     
     setZoom(newZoom);
     setPan({ x: newPanX, y: newPanY });
-  }, [zoom, pan]);
+  }, [zoom, pan, getImageDisplayProps]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (event.button === 0) {
