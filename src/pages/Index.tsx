@@ -231,7 +231,7 @@ const Index = () => {
                     max={20}
                     min={1}
                     step={1}
-                    className="w-full [&_[role=slider]]:bg-blue-600 [&_[role=slider]]:border-blue-500 [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-blue-600"
+                    className="w-full [&_[role=slider]]:bg-white [&_[role=slider]]:border-slate-500 [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-slate-600 [&_[role=slider]:focus-visible]:border-blue-500 [&_[role=slider]:focus-visible]:ring-0 [&_[role=slider]:focus-visible]:ring-offset-0"
                   />
                 </div>
               </div>
