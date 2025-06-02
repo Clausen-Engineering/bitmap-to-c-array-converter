@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useCallback } from 'react';
 
 interface PixelEditorCanvasProps {
@@ -25,22 +24,73 @@ const PixelEditorCanvas = ({
   height
 }: PixelEditorCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
   const hasDraggedRef = useRef(false);
 
+  // Calculate canvas size based on container and ensure full picture is visible
+  useEffect(() => {
+    if (!data || data.length === 0 || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const rows = data.length;
+    const cols = data[0].length;
+    
+    // Get container width (subtract padding)
+    const containerWidth = container.clientWidth - 32; // 16px padding on each side
+    const aspectRatio = cols / rows;
+    
+    // Calculate display size to fit the picture
+    let displayWidth = Math.min(containerWidth, cols * 8);
+    let displayHeight = displayWidth / aspectRatio;
+    
+    // If height would be too large, constrain by height instead
+    const maxHeight = 600;
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight;
+      displayWidth = displayHeight * aspectRatio;
+    }
+
+    // Calculate zoom to fit the entire picture
+    const zoomToFitWidth = displayWidth / cols;
+    const zoomToFitHeight = displayHeight / rows;
+    const fitZoom = Math.min(zoomToFitWidth, zoomToFitHeight);
+    
+    // Center the picture
+    const centeredPanX = (displayWidth - cols * fitZoom) / 2;
+    const centeredPanY = (displayHeight - rows * fitZoom) / 2;
+    
+    // Update zoom and pan to show the full picture
+    onZoomChange(fitZoom, { x: centeredPanX, y: centeredPanY });
+  }, [data, onZoomChange]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !data || data.length === 0) return;
+    if (!canvas || !data || data.length === 0 || !containerRef.current) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const container = containerRef.current;
     const rows = data.length;
     const cols = data[0].length;
     
-    canvas.width = width;
-    canvas.height = height;
+    // Calculate canvas size to match container width
+    const containerWidth = container.clientWidth - 32;
+    const aspectRatio = cols / rows;
+    
+    let canvasWidth = Math.min(containerWidth, cols * 8);
+    let canvasHeight = canvasWidth / aspectRatio;
+    
+    const maxHeight = 600;
+    if (canvasHeight > maxHeight) {
+      canvasHeight = maxHeight;
+      canvasWidth = canvasHeight * aspectRatio;
+    }
+
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
 
     // Disable image smoothing for pixel-perfect rendering
     ctx.imageSmoothingEnabled = false;
@@ -100,7 +150,7 @@ const PixelEditorCanvas = ({
     }
     
     ctx.restore();
-  }, [data, zoom, pan, showGrid, width, height]);
+  }, [data, zoom, pan, showGrid]);
 
   const handleWheel = useCallback((event: React.WheelEvent) => {
     event.preventDefault();
@@ -175,19 +225,19 @@ const PixelEditorCanvas = ({
   }, [data, zoom, pan, onPixelClick]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      onWheel={handleWheel}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onClick={handleCanvasClick}
-      className="border border-slate-600 rounded cursor-crosshair"
-      style={{ imageRendering: 'pixelated' }}
-    />
+    <div ref={containerRef} className="w-full bg-slate-800 p-4 rounded-lg shadow-2xl">
+      <canvas
+        ref={canvasRef}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onClick={handleCanvasClick}
+        className="border border-slate-600 rounded cursor-crosshair mx-auto block"
+        style={{ imageRendering: 'pixelated' }}
+      />
+    </div>
   );
 };
 
