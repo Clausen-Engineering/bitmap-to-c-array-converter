@@ -95,9 +95,24 @@ const BitmapViewer = ({ data, zoom, showGrid }: BitmapViewerProps) => {
     );
   }
 
+  // Calculate dynamic height based on image dimensions and zoom
+  const rows = data.length;
+  const cols = data[0].length;
+  const displayHeight = rows * zoom;
+  const displayWidth = cols * zoom;
+  
+  // Use dynamic max-height based on the actual image size, with reasonable limits
+  const maxHeight = Math.min(displayHeight + 32, window.innerHeight * 0.8); // 80% of viewport height max
+  const shouldScroll = displayHeight > maxHeight - 32;
+
   return (
     <div className="flex justify-center" ref={containerRef}>
-      <div className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl overflow-auto max-h-[600px] max-w-full">
+      <div 
+        className="inline-block bg-slate-800 p-4 rounded-lg shadow-2xl overflow-auto max-w-full"
+        style={{ 
+          maxHeight: shouldScroll ? `${maxHeight}px` : 'none'
+        }}
+      >
         <canvas
           ref={canvasRef}
           className="border border-slate-600 rounded shadow-lg"
