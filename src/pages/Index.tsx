@@ -157,7 +157,7 @@ const Index = () => {
                 <Button
                   onClick={loadSampleData}
                   variant="outline"
-                  className="border-slate-500 text-white hover:bg-slate-700 hover:text-white"
+                  className="border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
                 >
                   Load Sample Data
                 </Button>
@@ -224,25 +224,28 @@ const Index = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-white">Zoom Level: {zoom[0]}x</Label>
-                <Slider
-                  value={zoom}
-                  onValueChange={setZoom}
-                  max={20}
-                  min={1}
-                  step={1}
-                  className="w-full"
-                />
+                <Label className="text-slate-200">Zoom Level: {zoom[0]}x</Label>
+                <div className="bg-slate-800/50 p-3 rounded-lg">
+                  <Slider
+                    value={zoom}
+                    onValueChange={setZoom}
+                    max={20}
+                    min={1}
+                    step={1}
+                    className="w-full [&_[role=slider]]:bg-white [&_[role=slider]]:border-slate-400"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="grid-toggle" className="text-white">
+              <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg">
+                <Label htmlFor="grid-toggle" className="text-slate-200">
                   Show Grid Lines
                 </Label>
                 <Switch
                   id="grid-toggle"
                   checked={showGrid}
                   onCheckedChange={setShowGrid}
+                  className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-600"
                 />
               </div>
 
@@ -269,7 +272,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-500 text-white hover:bg-slate-700 hover:text-white"
+                  className="border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download PNG
