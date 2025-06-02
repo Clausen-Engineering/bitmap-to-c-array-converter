@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +10,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Download, Upload, Zap, Image } from 'lucide-react';
 import BitmapViewer from '@/components/BitmapViewer';
 import { parseArrayData } from '@/utils/arrayParser';
+import { convertImageToArray } from '@/utils/imageToArray';
 
 const Index = () => {
   const [arrayData, setArrayData] = useState('');
@@ -71,14 +71,46 @@ const Index = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        // TODO: Implement image to C array conversion
-        toast({
-          title: "Feature Coming Soon",
-          description: "Image to C array conversion will be implemented soon.",
-        });
+        const widthValue = parseInt(width);
+        const heightValue = parseInt(height);
+        
+        if (!widthValue || !heightValue || widthValue <= 0 || heightValue <= 0) {
+          toast({
+            title: "Invalid dimensions",
+            description: "Please set valid width and height dimensions first.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setIsLoading(true);
+        
+        try {
+          const cArrayString = await convertImageToArray(file, {
+            width: widthValue,
+            height: heightValue,
+            threshold: 128 // You can make this configurable later
+          });
+          
+          setArrayData(cArrayString);
+          
+          toast({
+            title: "Image converted!",
+            description: "The image has been converted to a C array. Click 'Parse Arrays' to visualize it.",
+          });
+        } catch (error) {
+          console.error('Error converting image:', error);
+          toast({
+            title: "Conversion Error",
+            description: "Could not convert the image. Please try a different image.",
+            variant: "destructive"
+          });
+        }
+        
+        setIsLoading(false);
       }
     };
     input.click();
