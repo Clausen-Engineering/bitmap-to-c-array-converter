@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://clausen-engineering.github.io/bitmap-to-c-array",
+  "homepage": "https://clausen-engineering.github.io/bitmap-to-c-array-converter",
   "scripts": {
     "build": "vite build",
     "build:github": "cross-env GITHUB_PAGES=true vite build",

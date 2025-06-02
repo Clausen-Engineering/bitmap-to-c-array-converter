@@ -23,7 +23,7 @@ export default defineConfig(({ command, mode }) => {
   if (command === 'build') {
     // Use the correct repository name (British spelling)
     const isGitHubBuild = process.env.GITHUB_PAGES === 'true';
-    config.base = isGitHubBuild ? '/3a-console-log-analyser/' : '/';
+    config.base = isGitHubBuild ? '/bitmap-to-c-array-converter/' : '/';
   }
 
   return config;
