@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { Download, Upload, Zap, Image, Edit } from 'lucide-react';
+import { Download, Upload, Zap, Image } from 'lucide-react';
 import BitmapViewer from '@/components/BitmapViewer';
 import PixelEditor from '@/components/PixelEditor';
 import { parseArrayData } from '@/utils/arrayParser';
@@ -134,6 +134,27 @@ const Index = () => {
       toast({
         title: "Bitmap Updated!",
         description: "Your pixel edits have been saved successfully."
+      });
+    }
+  };
+
+  const handleRevertColor = () => {
+    if (parsedArrays.length > 0 && parsedArrays[selectedArray]) {
+      const currentArray = parsedArrays[selectedArray];
+      const revertedData = currentArray.data.map(row => 
+        row.map(pixel => pixel === 0 ? 1 : 0)
+      );
+      
+      const updatedArrays = [...parsedArrays];
+      updatedArrays[selectedArray] = {
+        ...updatedArrays[selectedArray],
+        data: revertedData
+      };
+      setParsedArrays(updatedArrays);
+      
+      toast({
+        title: "Colors Reverted!",
+        description: "All pixel colors have been inverted successfully."
       });
     }
   };
@@ -287,15 +308,6 @@ const Index = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleEditPixels}
-                    className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Pixels
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
                     className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
                   >
                     <Download className="w-4 h-4 mr-2" />
@@ -309,6 +321,7 @@ const Index = () => {
                 data={parsedArrays[selectedArray].data}
                 showGrid={showGrid}
                 onEdit={handleEditPixels}
+                onRevertColor={handleRevertColor}
               />
             </CardContent>
           </Card>

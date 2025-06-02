@@ -1,10 +1,9 @@
-
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Save, X } from 'lucide-react';
+import { Save, X, Palette } from 'lucide-react';
 
 interface PixelEditorProps {
   isOpen: boolean;
@@ -169,6 +168,15 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
     onClose();
   };
 
+  const handleRevertColor = () => {
+    if (!editableData || editableData.length === 0) return;
+    
+    const revertedData = editableData.map(row => 
+      row.map(pixel => pixel === 0 ? 1 : 0)
+    );
+    setEditableData(revertedData);
+  };
+
   if (!data || data.length === 0) return null;
 
   const rows = data.length;
@@ -197,6 +205,15 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
                 className="data-[state=checked]:bg-blue-600"
               />
             </div>
+            
+            <Button
+              onClick={handleRevertColor}
+              variant="outline"
+              className="border-slate-500 bg-slate-700 text-white hover:bg-slate-600"
+            >
+              <Palette className="w-4 h-4 mr-2" />
+              Revert Color
+            </Button>
             
             <div className="ml-auto flex gap-2">
               <Button

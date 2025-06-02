@@ -1,15 +1,15 @@
-
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
+import { Edit, Palette } from 'lucide-react';
 
 interface BitmapViewerProps {
   data: number[][];
   showGrid: boolean;
   onEdit?: () => void;
+  onRevertColor?: () => void;
 }
 
-const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
+const BitmapViewer = ({ data, showGrid, onEdit, onRevertColor }: BitmapViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [baseCanvas, setBaseCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -103,6 +103,12 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
     }
   };
 
+  const handleRevertColor = () => {
+    if (onRevertColor) {
+      onRevertColor();
+    }
+  };
+
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400 bg-slate-800/30 rounded-lg border-2 border-dashed border-slate-600">
@@ -116,6 +122,32 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center mb-2">
+        <span></span>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRevertColor}
+            className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
+          >
+            <Palette className="w-4 h-4 mr-2" />
+            Revert Color
+          </Button>
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Pixels
+            </Button>
+          )}
+        </div>
+      </div>
+      
       <div className="flex justify-center">
         <div ref={containerRef} className="w-full bg-slate-800 p-4 rounded-lg shadow-2xl">
           <div className="mb-2 text-sm text-slate-400 text-center">
