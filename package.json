@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "homepage": "https://clausen-engineering.github.io/bitmap-to-c-array",
-    "scripts": {
+  "scripts": {
     "build": "vite build",
-    "build:github": "vite build",
+    "build:github": "cross-env GITHUB_PAGES=true vite build",
     "serve": "serve -s dist -p 3000",
     "serve:local": "npm run build && npm run serve"
   },
@@ -67,6 +67,7 @@
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "cross-env": "^7.0.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
