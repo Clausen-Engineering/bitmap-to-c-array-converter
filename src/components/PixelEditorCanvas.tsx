@@ -52,20 +52,23 @@ const PixelEditorCanvas = ({
     ctx.save();
     ctx.translate(pan.x, pan.y);
 
-    // Calculate pixel size - use exact zoom value for smoother scaling
+    // Calculate pixel size
     const pixelSize = zoom;
     
-    // Draw pixels first (background layer)
+    // Draw pixels with no gaps or overlaps
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const bit = data[row][col];
         ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
         
-        const x = col * pixelSize;
-        const y = row * pixelSize;
+        const x = Math.floor(col * pixelSize);
+        const y = Math.floor(row * pixelSize);
         
-        // Fill with slight overlap to prevent gaps
-        ctx.fillRect(x, y, pixelSize + 0.1, pixelSize + 0.1);
+        // Use Math.ceil to ensure complete coverage without gaps
+        const pixelWidth = Math.ceil((col + 1) * pixelSize) - x;
+        const pixelHeight = Math.ceil((row + 1) * pixelSize) - y;
+        
+        ctx.fillRect(x, y, pixelWidth, pixelHeight);
       }
     }
 
@@ -110,7 +113,8 @@ const PixelEditorCanvas = ({
     const mouseY = event.clientY - rect.top;
     
     const oldZoom = zoom;
-    const zoomFactor = event.deltaY > 0 ? 0.95 : 1.05;
+    // Make zooming more responsive by increasing the zoom factor
+    const zoomFactor = event.deltaY > 0 ? 0.85 : 1.18;
     const newZoom = Math.max(1, Math.min(50, oldZoom * zoomFactor));
     
     if (newZoom !== oldZoom) {
