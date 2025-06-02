@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -412,7 +413,7 @@ const Index = () => {
             C Array to Bitmap Converter
           </h1>
           <p className="text-slate-400 text-lg">
-            Convert between embedded C arrays and black and white bitmap visualizations - both directions supported
+            Convert between embedded C arrays and black and white bitmap visualizations
           </p>
         </div>
 
