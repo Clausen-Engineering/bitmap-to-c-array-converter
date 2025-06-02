@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -53,16 +54,25 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
     ctx.save();
     ctx.translate(pan.x, pan.y);
 
-    // Draw pixels
+    // Draw pixels with slight overlap to prevent gaps
+    const pixelSize = zoom;
+    const overlap = Math.max(0.1, zoom * 0.01); // Small overlap to prevent gaps
+    
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const bit = editableData[row][col];
         ctx.fillStyle = bit === 0 ? '#000000' : '#ffffff';
-        ctx.fillRect(col * zoom, row * zoom, zoom, zoom);
+        // Draw with slight overlap to ensure complete coverage
+        ctx.fillRect(
+          col * pixelSize - overlap, 
+          row * pixelSize - overlap, 
+          pixelSize + overlap * 2, 
+          pixelSize + overlap * 2
+        );
       }
     }
 
-    // Draw grid if enabled
+    // Draw grid if enabled and on top of pixels
     if (showGrid && zoom > 2) {
       ctx.strokeStyle = '#475569';
       ctx.lineWidth = 1;
