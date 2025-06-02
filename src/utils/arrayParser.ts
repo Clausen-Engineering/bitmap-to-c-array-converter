@@ -24,36 +24,43 @@ export const parseArrayData = (input: string, dimensions: CustomDimensions): Par
   console.log('Cleaned input:', cleaned.substring(0, 200) + '...');
 
   // Look for array declarations and their data
-  const arrayPattern = /(\w+)\s*\[\s*\d*\s*\]\s*\[\s*\d*\s*\]\s*=\s*{([^}]+)}/g;
-  let match;
-  let arrayIndex = 0;
+  const arrayPattern = /(\w+)\s*\[\s*\d*\s*\]\s*\[\s*\d*\s*\]\s*=\s*{([\s\S]*?)};/g;
+  let match = arrayPattern.exec(cleaned);
 
-  while ((match = arrayPattern.exec(cleaned)) !== null) {
+  if (match) {
     const arrayName = match[1];
     const arrayContent = match[2];
     
-    console.log(`Found array: ${arrayName}`);
+    console.log(`Found multidimensional array: ${arrayName}`);
     
-    // Parse individual sub-arrays
-    const subArrayPattern = /{([^}]+)}/g;
-    let subMatch;
-    let subArrayIndex = 0;
+    // Split the content by closing and opening braces to find individual sub-arrays
+    const subArrays = arrayContent.split(/}\s*,\s*{/);
     
-    while ((subMatch = subArrayPattern.exec(arrayContent)) !== null) {
-      const hexValues = subMatch[1];
-      console.log(`Processing sub-array ${subArrayIndex}:`, hexValues.substring(0, 100) + '...');
-      
-      const bitmap = parseHexArrayToBitmap(hexValues, dimensions);
-      
-      results.push({
-        name: `${arrayName}[${subArrayIndex}]`,
-        data: bitmap
-      });
-      
-      subArrayIndex++;
+    // Clean up the first and last elements
+    if (subArrays.length > 0) {
+      subArrays[0] = subArrays[0].replace(/^{\s*/, ''); // Remove opening brace from first
+      subArrays[subArrays.length - 1] = subArrays[subArrays.length - 1].replace(/\s*}$/, ''); // Remove closing brace from last
     }
     
-    arrayIndex++;
+    console.log(`Found ${subArrays.length} sub-arrays`);
+    
+    subArrays.forEach((subArrayContent, index) => {
+      const cleanContent = subArrayContent.trim();
+      if (cleanContent) {
+        console.log(`Processing sub-array ${index}:`, cleanContent.substring(0, 100) + '...');
+        
+        try {
+          const bitmap = parseHexArrayToBitmap(cleanContent, dimensions);
+          
+          results.push({
+            name: `${arrayName}[${index}]`,
+            data: bitmap
+          });
+        } catch (error) {
+          console.error(`Error parsing sub-array ${index}:`, error);
+        }
+      }
+    });
   }
 
   // If no multi-dimensional arrays found, try to parse as single array
@@ -74,7 +81,7 @@ export const parseArrayData = (input: string, dimensions: CustomDimensions): Par
   }
 
   if (results.length === 0) {
-    throw new Error('No valid array data found');
+    throw new Error('No valid array data found. Please check the format.');
   }
 
   console.log(`Successfully parsed ${results.length} arrays`);
@@ -86,9 +93,9 @@ const parseHexArrayToBitmap = (hexString: string, dimensions: CustomDimensions):
   const hexValues = hexString
     .split(',')
     .map(val => val.trim().replace(/^0[xX]/, ''))
-    .filter(val => val.length > 0);
+    .filter(val => val.length > 0 && val !== '');
 
-  console.log(`Found ${hexValues.length} hex values`);
+  console.log(`Found ${hexValues.length} hex values for bitmap conversion`);
   console.log(`Using dimensions: ${dimensions.width}x${dimensions.height}`);
 
   if (hexValues.length === 0) {

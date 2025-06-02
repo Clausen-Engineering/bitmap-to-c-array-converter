@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { Download, Upload, Zap } from 'lucide-react';
+import { Download, Upload, Zap, Image } from 'lucide-react';
 import BitmapViewer from '@/components/BitmapViewer';
 import { parseArrayData } from '@/utils/arrayParser';
 
@@ -66,48 +67,21 @@ const Index = () => {
     setIsLoading(false);
   };
 
-  const loadSampleData = () => {
-    const sampleData = `const unsigned char Num[10][256] = {
-//0
-{
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFE,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFE,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFE,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFE,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFE,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFE,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XF8,0XFF,0XFF,0XFF,0XFF,0XE3,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X03,0XFF,
-0XFF,0XF0,0X00,0X00,0X00,0X00,0X03,0XFF,0XFF,0XF0,0X00,0X00,0X00,0X00,0X03,0XFF,
-0XFF,0XC0,0X00,0X00,0X00,0X00,0X03,0XFF,0XFF,0XC0,0X00,0X00,0X00,0X00,0X03,0XFF,
-0XFF,0XC0,0X00,0X00,0X00,0X00,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XC3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XE3,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,  
-},
-//1
-{
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFC,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFC,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFC,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFC,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFC,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFC,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XF8,0XFF,0XFF,0XFF,0XFF,0XE3,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X03,0XFF,
-0XFF,0XF0,0X00,0X00,0X00,0X00,0X03,0XFF,0XFF,0XF0,0X00,0X00,0X00,0X00,0X03,0XFF,
-0XFF,0XC0,0X00,0X00,0X00,0X00,0X03,0XFF,0XFF,0XC0,0X00,0X00,0X00,0X00,0X03,0XFF,
-0XFF,0XC0,0X00,0X00,0X00,0X00,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XC3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XE3,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF3,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,  
-}
-};`;
-    setArrayData(sampleData);
+  const handleLoadPicture = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // TODO: Implement image to C array conversion
+        toast({
+          title: "Feature Coming Soon",
+          description: "Image to C array conversion will be implemented soon.",
+        });
+      }
+    };
+    input.click();
   };
 
   return (
@@ -154,11 +128,12 @@ const Index = () => {
                 </Button>
                 
                 <Button
-                  onClick={loadSampleData}
+                  onClick={handleLoadPicture}
                   variant="outline"
-                  className="border-slate-500 text-slate-800 hover:bg-slate-700 hover:text-white"
+                  className="border-slate-500 bg-slate-700 text-slate-800 hover:bg-slate-600 hover:text-white"
                 >
-                  Load Sample Data
+                  <Image className="w-4 h-4 mr-2" />
+                  Load Picture
                 </Button>
               </div>
 
@@ -223,21 +198,21 @@ const Index = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-200">Zoom Level: {zoom[0]}x</Label>
-                <div className="bg-slate-800/50 p-3 rounded-lg">
+                <Label className="text-white">Zoom Level: {zoom[0]}x</Label>
+                <div className="bg-slate-800 p-3 rounded-lg">
                   <Slider
                     value={zoom}
                     onValueChange={setZoom}
                     max={20}
                     min={1}
                     step={1}
-                    className="w-full [&_[role=slider]]:bg-white [&_[role=slider]]:border-slate-500 [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-slate-600 [&_[role=slider]:focus-visible]:border-blue-500 [&_[role=slider]:focus-visible]:ring-0 [&_[role=slider]:focus-visible]:ring-offset-0"
+                    className="w-full [&_[role=slider]]:bg-blue-600 [&_[role=slider]]:border-slate-500 [&_.bg-primary]:bg-white [&_.bg-secondary]:bg-slate-600 [&_[role=slider]:focus-visible]:border-blue-500 [&_[role=slider]:focus-visible]:ring-0 [&_[role=slider]:focus-visible]:ring-offset-0"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg">
-                <Label htmlFor="grid-toggle" className="text-slate-200">
+              <div className="flex items-center justify-between bg-slate-800 p-3 rounded-lg">
+                <Label htmlFor="grid-toggle" className="text-white">
                   Show Grid Lines
                 </Label>
                 <Switch
@@ -271,7 +246,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-500 text-slate-800 hover:bg-slate-700 hover:text-white"
+                  className="border-slate-500 bg-slate-700 text-slate-800 hover:bg-slate-600 hover:text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download PNG
