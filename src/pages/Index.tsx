@@ -97,6 +97,17 @@ const Index = () => {
 
           const { width: detectedWidth, height: detectedHeight } = await imageLoadPromise;
           
+          // Check if height is divisible by 8
+          if (detectedHeight % 8 !== 0) {
+            toast({
+              title: "Invalid Image Height",
+              description: `Image height (${detectedHeight}px) must be divisible by 8. Current height has remainder: ${detectedHeight % 8}`,
+              variant: "destructive"
+            });
+            setIsLoading(false);
+            return;
+          }
+          
           setWidth(detectedWidth.toString());
           setHeight(detectedHeight.toString());
           
@@ -129,7 +140,7 @@ const Index = () => {
             imageDimensions.push({ ...dimensions, file });
           }
           
-          // Check if all images have the same dimensions
+          // Check if all images have the same dimensions and height divisible by 8
           const firstDimensions = imageDimensions[0];
           const allSameDimensions = imageDimensions.every(
             img => img.width === firstDimensions.width && img.height === firstDimensions.height
@@ -139,6 +150,17 @@ const Index = () => {
             toast({
               title: "Dimension Mismatch",
               description: "All images must have the same dimensions for multidimensional arrays.",
+              variant: "destructive"
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+          // Check if height is divisible by 8
+          if (firstDimensions.height % 8 !== 0) {
+            toast({
+              title: "Invalid Image Height",
+              description: `Image height (${firstDimensions.height}px) must be divisible by 8. Current height has remainder: ${firstDimensions.height % 8}`,
               variant: "destructive"
             });
             setIsLoading(false);
@@ -390,7 +412,7 @@ const Index = () => {
             C Array to Bitmap Converter
           </h1>
           <p className="text-slate-400 text-lg">
-            Transform your embedded C arrays into beautiful black and white bitmap visualizations
+            Convert between embedded C arrays and black and white bitmap visualizations - both directions supported
           </p>
         </div>
 
@@ -404,6 +426,8 @@ const Index = () => {
               </CardTitle>
               <CardDescription className="text-slate-400">
                 Paste your C array data here (supports multi-dimensional arrays)
+                <br />
+                <span className="text-yellow-400 font-medium">! Height must be divisible by 8</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
