@@ -78,7 +78,7 @@ const Index = () => {
         
         try {
           // Create image to detect dimensions
-          const img = new Image();
+          const img = document.createElement('img');
           const imageLoadPromise = new Promise<{ width: number; height: number }>((resolve, reject) => {
             img.onload = () => {
               resolve({ width: img.naturalWidth, height: img.naturalHeight });
