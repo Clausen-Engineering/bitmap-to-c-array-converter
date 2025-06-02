@@ -168,7 +168,7 @@ const Index = () => {
                   <select
                     value={selectedArray}
                     onChange={(e) => setSelectedArray(Number(e.target.value))}
-                    className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"
+                    className="w-full bg-slate-600 border border-slate-600 rounded px-3 py-2 text-white"
                   >
                     {parsedArrays.map((arr, index) => (
                       <option key={index} value={index}>
