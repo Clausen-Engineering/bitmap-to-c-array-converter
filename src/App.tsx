@@ -8,12 +8,26 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Get the correct basename for GitHub Pages
+const getBasename = () => {
+  // In development or when served from root, no basename needed
+  if (import.meta.env.DEV) return "";
+  
+  // For GitHub Pages deployment
+  if (window.location.hostname.includes('github.io')) {
+    return "/bitmap-to-c-array-converter";
+  }
+  
+  // For custom domains or other deployments
+  return "";
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={getBasename()}>
         <Routes>
           <Route path="/" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
