@@ -25,57 +25,22 @@ const PixelEditorCanvas = ({
   height
 }: PixelEditorCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
   const hasDraggedRef = useRef(false);
 
-  // Calculate canvas size and initial zoom to show full picture
-  useEffect(() => {
-    if (!data || data.length === 0 || !containerRef.current) return;
-
-    const container = containerRef.current;
-    const rows = data.length;
-    const cols = data[0].length;
-    
-    // Use full container width minus small margin
-    const containerWidth = container.clientWidth - 40; // 20px margin on each side
-    const maxHeight = 600;
-    
-    // Set canvas to use full container width
-    const canvasWidth = containerWidth;
-    const canvasHeight = maxHeight;
-
-    // Calculate zoom to fit the entire picture within the canvas
-    const zoomToFitWidth = canvasWidth / cols;
-    const zoomToFitHeight = canvasHeight / rows;
-    const fitZoom = Math.min(zoomToFitWidth, zoomToFitHeight);
-    
-    // Center the picture within the canvas
-    const centeredPanX = (canvasWidth - cols * fitZoom) / 2;
-    const centeredPanY = (canvasHeight - rows * fitZoom) / 2;
-    
-    // Update zoom and pan to show the full picture
-    onZoomChange(fitZoom, { x: centeredPanX, y: centeredPanY });
-  }, [data, onZoomChange]);
-
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !data || data.length === 0 || !containerRef.current) return;
+    if (!canvas || !data || data.length === 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const container = containerRef.current;
     const rows = data.length;
     const cols = data[0].length;
     
-    // Set canvas to use full container width minus small margin
-    const containerWidth = container.clientWidth - 40; // 20px margin on each side
-    const maxHeight = 600;
-
-    canvas.width = containerWidth;
-    canvas.height = maxHeight;
+    canvas.width = width;
+    canvas.height = height;
 
     // Disable image smoothing for pixel-perfect rendering
     ctx.imageSmoothingEnabled = false;
@@ -111,11 +76,11 @@ const PixelEditorCanvas = ({
     if (showGrid && pixelSize >= 4) {
       ctx.strokeStyle = '#64748b';
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.2;
+      ctx.globalAlpha = 0.3;
       
       // Vertical lines
       for (let col = 0; col <= cols; col++) {
-        const x = Math.floor(col * pixelSize) + 0.5;
+        const x = Math.round(col * pixelSize) + 0.5;
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, rows * pixelSize);
@@ -124,7 +89,7 @@ const PixelEditorCanvas = ({
       
       // Horizontal lines
       for (let row = 0; row <= rows; row++) {
-        const y = Math.floor(row * pixelSize) + 0.5;
+        const y = Math.round(row * pixelSize) + 0.5;
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(cols * pixelSize, y);
@@ -135,7 +100,7 @@ const PixelEditorCanvas = ({
     }
     
     ctx.restore();
-  }, [data, zoom, pan, showGrid]);
+  }, [data, zoom, pan, showGrid, width, height]);
 
   const handleWheel = useCallback((event: React.WheelEvent) => {
     event.preventDefault();
@@ -148,9 +113,9 @@ const PixelEditorCanvas = ({
     const mouseY = event.clientY - rect.top;
     
     const oldZoom = zoom;
-    // More responsive zooming
-    const zoomFactor = event.deltaY > 0 ? 0.75 : 1.33;
-    const newZoom = Math.max(0.5, Math.min(100, oldZoom * zoomFactor));
+    // Make zooming more responsive by increasing the zoom factor
+    const zoomFactor = event.deltaY > 0 ? 0.85 : 1.18;
+    const newZoom = Math.max(1, Math.min(50, oldZoom * zoomFactor));
     
     if (newZoom !== oldZoom) {
       const zoomRatio = newZoom / oldZoom;
@@ -210,19 +175,19 @@ const PixelEditorCanvas = ({
   }, [data, zoom, pan, onPixelClick]);
 
   return (
-    <div ref={containerRef} className="w-full bg-slate-800 p-4 rounded-lg shadow-2xl">
-      <canvas
-        ref={canvasRef}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onClick={handleCanvasClick}
-        className="border border-slate-600 rounded cursor-crosshair mx-auto block"
-        style={{ imageRendering: 'pixelated' }}
-      />
-    </div>
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onClick={handleCanvasClick}
+      className="border border-slate-600 rounded cursor-crosshair"
+      style={{ imageRendering: 'pixelated' }}
+    />
   );
 };
 
