@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useCallback } from 'react';
 
 interface PixelEditorCanvasProps {
@@ -29,7 +30,7 @@ const PixelEditorCanvas = ({
   const lastMousePosRef = useRef({ x: 0, y: 0 });
   const hasDraggedRef = useRef(false);
 
-  // Calculate canvas size based on container and ensure full picture is visible
+  // Calculate canvas size and initial zoom to show full picture
   useEffect(() => {
     if (!data || data.length === 0 || !containerRef.current) return;
 
@@ -37,29 +38,22 @@ const PixelEditorCanvas = ({
     const rows = data.length;
     const cols = data[0].length;
     
-    // Get container width (subtract padding)
-    const containerWidth = container.clientWidth - 32; // 16px padding on each side
-    const aspectRatio = cols / rows;
-    
-    // Calculate display size to fit the picture
-    let displayWidth = Math.min(containerWidth, cols * 8);
-    let displayHeight = displayWidth / aspectRatio;
-    
-    // If height would be too large, constrain by height instead
+    // Use full container width minus small margin
+    const containerWidth = container.clientWidth - 40; // 20px margin on each side
     const maxHeight = 600;
-    if (displayHeight > maxHeight) {
-      displayHeight = maxHeight;
-      displayWidth = displayHeight * aspectRatio;
-    }
+    
+    // Set canvas to use full container width
+    const canvasWidth = containerWidth;
+    const canvasHeight = maxHeight;
 
-    // Calculate zoom to fit the entire picture
-    const zoomToFitWidth = displayWidth / cols;
-    const zoomToFitHeight = displayHeight / rows;
+    // Calculate zoom to fit the entire picture within the canvas
+    const zoomToFitWidth = canvasWidth / cols;
+    const zoomToFitHeight = canvasHeight / rows;
     const fitZoom = Math.min(zoomToFitWidth, zoomToFitHeight);
     
-    // Center the picture
-    const centeredPanX = (displayWidth - cols * fitZoom) / 2;
-    const centeredPanY = (displayHeight - rows * fitZoom) / 2;
+    // Center the picture within the canvas
+    const centeredPanX = (canvasWidth - cols * fitZoom) / 2;
+    const centeredPanY = (canvasHeight - rows * fitZoom) / 2;
     
     // Update zoom and pan to show the full picture
     onZoomChange(fitZoom, { x: centeredPanX, y: centeredPanY });
@@ -76,21 +70,12 @@ const PixelEditorCanvas = ({
     const rows = data.length;
     const cols = data[0].length;
     
-    // Calculate canvas size to match container width
-    const containerWidth = container.clientWidth - 32;
-    const aspectRatio = cols / rows;
-    
-    let canvasWidth = Math.min(containerWidth, cols * 8);
-    let canvasHeight = canvasWidth / aspectRatio;
-    
+    // Set canvas to use full container width minus small margin
+    const containerWidth = container.clientWidth - 40; // 20px margin on each side
     const maxHeight = 600;
-    if (canvasHeight > maxHeight) {
-      canvasHeight = maxHeight;
-      canvasWidth = canvasHeight * aspectRatio;
-    }
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    canvas.width = containerWidth;
+    canvas.height = maxHeight;
 
     // Disable image smoothing for pixel-perfect rendering
     ctx.imageSmoothingEnabled = false;
@@ -126,11 +111,11 @@ const PixelEditorCanvas = ({
     if (showGrid && pixelSize >= 4) {
       ctx.strokeStyle = '#64748b';
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.3;
+      ctx.globalAlpha = 0.2;
       
       // Vertical lines
       for (let col = 0; col <= cols; col++) {
-        const x = Math.round(col * pixelSize) + 0.5;
+        const x = Math.floor(col * pixelSize) + 0.5;
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, rows * pixelSize);
@@ -139,7 +124,7 @@ const PixelEditorCanvas = ({
       
       // Horizontal lines
       for (let row = 0; row <= rows; row++) {
-        const y = Math.round(row * pixelSize) + 0.5;
+        const y = Math.floor(row * pixelSize) + 0.5;
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(cols * pixelSize, y);
@@ -163,9 +148,9 @@ const PixelEditorCanvas = ({
     const mouseY = event.clientY - rect.top;
     
     const oldZoom = zoom;
-    // Make zooming more responsive by increasing the zoom factor
-    const zoomFactor = event.deltaY > 0 ? 0.85 : 1.18;
-    const newZoom = Math.max(1, Math.min(50, oldZoom * zoomFactor));
+    // More responsive zooming
+    const zoomFactor = event.deltaY > 0 ? 0.75 : 1.33;
+    const newZoom = Math.max(0.5, Math.min(100, oldZoom * zoomFactor));
     
     if (newZoom !== oldZoom) {
       const zoomRatio = newZoom / oldZoom;
