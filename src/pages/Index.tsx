@@ -184,7 +184,7 @@ const Index = () => {
                 <Button
                   onClick={handleLoadPicture}
                   variant="outline"
-                  className="border-slate-500 bg-slate-700 text-slate-800 hover:bg-slate-600 hover:text-white"
+                  className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
                 >
                   <Image className="w-4 h-4 mr-2" />
                   Load Picture
@@ -286,7 +286,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-slate-500 bg-slate-700 text-slate-800 hover:bg-slate-600 hover:text-white"
+                  className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download PNG
