@@ -212,7 +212,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
               className="border-slate-500 bg-slate-700 text-white hover:bg-slate-600"
             >
               <Palette className="w-4 h-4 mr-2" />
-              Revert Color
+              Invert Color
             </Button>
             
             <div className="ml-auto flex gap-2">

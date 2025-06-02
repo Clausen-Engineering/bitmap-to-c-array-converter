@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { Download, Upload, Zap, Image } from 'lucide-react';
+import { Download, Upload, Zap, Image, Palette, Edit } from 'lucide-react';
 import BitmapViewer from '@/components/BitmapViewer';
 import PixelEditor from '@/components/PixelEditor';
 import { parseArrayData } from '@/utils/arrayParser';
@@ -305,6 +305,24 @@ const Index = () => {
               <CardTitle className="flex items-center justify-between text-white">
                 <span>Bitmap Preview - {parsedArrays[selectedArray].name}</span>
                 <div className="flex gap-2">
+                  <Button
+                    onClick={handleRevertColor}
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
+                  >
+                    <Palette className="w-4 h-4 mr-2" />
+                    Invert Color
+                  </Button>
+                  <Button
+                    onClick={handleEditPixels}
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600 hover:text-white"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Pixels
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
