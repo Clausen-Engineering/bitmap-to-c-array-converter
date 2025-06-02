@@ -25,7 +25,7 @@ const PixelEditor = ({ isOpen, onClose, data, onSave, arrayName }: PixelEditorPr
   const [hasDragged, setHasDragged] = useState(false);
 
   // Fixed viewport size for editor
-  const VIEWPORT_WIDTH = 800;
+  const VIEWPORT_WIDTH = 1050;
   const VIEWPORT_HEIGHT = 600;
 
   useEffect(() => {

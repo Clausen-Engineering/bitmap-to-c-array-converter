@@ -49,8 +49,8 @@ const BitmapViewer = ({ data, showGrid, onEdit }: BitmapViewerProps) => {
     const cols = data[0].length;
     
     // Calculate display size - scale to fit available space while maintaining aspect ratio
-    const maxWidth = 600;
-    const maxHeight = 400;
+    const maxWidth = 1280;
+    const maxHeight = 1100;
     const aspectRatio = cols / rows;
     
     let displayWidth = Math.min(maxWidth, cols * 8);
